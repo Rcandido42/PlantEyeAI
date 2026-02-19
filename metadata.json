@@ -1,0 +1,8 @@
+{
+  "name": "PlantEye - Botanical Accessibility Assistant",
+  "description": "An AI-powered assistant designed for visually impaired users to monitor plant health. Features image analysis, real-time voice feedback (TTS), and health status reporting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
