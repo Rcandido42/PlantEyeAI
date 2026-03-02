@@ -5,6 +5,8 @@ import LiveAssistant from './components/LiveAssistant';
 import AnalysisResultView from './components/AnalysisResultView';
 import VoiceFeedback from './components/VoiceFeedback';
 import CameraSelector from './components/CameraSelector';
+import HistoryView from './components/HistoryView';
+import { useHistory } from './hooks/useHistory';
 import { AnalysisResult } from './types';
 
 function App() {
@@ -13,6 +15,7 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const { history, addHistoryItem, clearHistory, deleteHistoryItem } = useHistory();
 
   return (
     <div className="min-h-screen bg-[#F8FAF8] text-[#064E3B] font-sans pb-24">
@@ -63,6 +66,7 @@ function App() {
               onResult={(result, image) => {
                 setAnalysisResult(result);
                 setCapturedImage(image);
+                addHistoryItem(result, image);
               }}
               isAnalyzing={isAnalyzing}
               setIsAnalyzing={setIsAnalyzing}
@@ -106,12 +110,11 @@ function App() {
         )}
 
         {activeTab === 'history' && (
-          <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-emerald-200">
-            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <History className="w-8 h-8 text-emerald-200" />
-            </div>
-            <p className="text-emerald-300 font-bold uppercase tracking-widest text-xs">Histórico em breve</p>
-          </div>
+          <HistoryView 
+            history={history}
+            onClearHistory={clearHistory}
+            onDeleteItem={deleteHistoryItem}
+          />
         )}
       </main>
 
