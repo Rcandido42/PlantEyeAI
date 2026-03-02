@@ -83,9 +83,9 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
           config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
             },
-            systemInstruction: "Você é o PlantEye, um assistente especializado para pessoas com deficiência visual. Ajude-as a cuidar de suas plantas analisando o vídeo e o áudio. Seja descritivo mas extremamente conciso. Fale português do Brasil e dê orientações práticas sobre rega, luz e saúde vegetal.",
+            systemInstruction: "Tu és o PlantEye, um assistente especializado para pessoas com deficiência visual. Ajuda-as a cuidar das suas plantas analisando o vídeo e o áudio. Sê descritivo mas extremamente conciso. Fala português de Portugal (pt-PT) e dá orientações práticas sobre rega, luz e saúde vegetal.",
           },
           callbacks: {
             onmessage: async (message: LiveServerMessage) => {
@@ -185,7 +185,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
       
       <div className="absolute top-6 left-6 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
         <div className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse" />
-        <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Fluxo Sensorial Ativo</span>
+        <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Fluxo Sensorial Activo</span>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 to-transparent">
@@ -202,7 +202,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
             ))}
           </div>
           <p className="text-white font-bold text-sm tracking-wide">
-            PlantEye está ouvindo e observando
+            PlantEye está a ouvir e a observar
           </p>
         </div>
       </div>

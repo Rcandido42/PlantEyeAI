@@ -20,17 +20,17 @@ function App() {
       {/* Header com Logótipo Ajustado (Flexbox) */}
       <header className="bg-white border-b border-emerald-100 px-6 py-6 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          
+
           {/* INÍCIO DO LOGÓTIPO */}
           <div className="flex items-center gap-3">
             {/* 1. A Caixa (PL + Folha + NT) */}
             {/* Usamos flex e gap-0.5 para a folha ficar entre as letras sem atropelar */}
             <div className="border-[3px] border-[#064E3B] px-3 py-1 flex items-center justify-center gap-0.5">
               <span className="text-3xl font-black tracking-tighter text-[#064E3B]">PL</span>
-              
+
               {/* A folha agora é um elemento estático no fluxo, não absolute */}
               <Leaf className="w-7 h-7 text-[#064E3B] fill-current transform -rotate-12 flex-shrink-0 mt-0.5" />
-              
+
               <span className="text-3xl font-black tracking-tighter text-[#064E3B]">NT</span>
             </div>
 
@@ -59,7 +59,7 @@ function App() {
               </div>
             </div>
 
-            <PlantScanner 
+            <PlantScanner
               onResult={(result, image) => {
                 setAnalysisResult(result);
                 setCapturedImage(image);
@@ -76,7 +76,7 @@ function App() {
                 </div>
                 <h3 className="font-bold text-sm mb-1 text-emerald-900">Como funciona?</h3>
                 <p className="text-xs text-emerald-700/70 leading-relaxed">
-                  Aponte a câmera para a planta e clique no botão central para uma análise instantânea baseada em IA.
+                  Aponte a câmara para a planta e clique no botão central para uma análise instantânea baseada em IA.
                 </p>
               </div>
               <div className="bg-[#064E3B] p-6 rounded-[2rem] shadow-lg text-white">
@@ -85,7 +85,7 @@ function App() {
                 </div>
                 <h3 className="font-bold text-sm mb-1 text-emerald-50">Dica para um bom diagnóstico</h3>
                 <p className="text-xs text-emerald-100/70 leading-relaxed">
-                  Para melhores resultados, garanta que as folhas estejam bem iluminadas e visíveis na área de foco.
+                  Para melhores resultados, garanta que as folhas estão bem iluminadas e visíveis na área de foco.
                 </p>
               </div>
             </div>
@@ -95,10 +95,10 @@ function App() {
         {activeTab === 'live' && (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black tracking-tight text-emerald-950">Monitoramento Vivo</h2>
+              <h2 className="text-2xl font-black tracking-tight text-emerald-950">Monitorização em Directo</h2>
               <div className="flex items-center gap-2 px-3 py-1 bg-rose-100 rounded-full">
                 <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Real-time</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Tempo Real</span>
               </div>
             </div>
             <LiveAssistant isActive={activeTab === 'live'} deviceId={selectedDeviceId} />
@@ -120,29 +120,26 @@ function App() {
         <div className="flex justify-between items-center">
           <button
             onClick={() => setActiveTab('scan')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${
-              activeTab === 'scan' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-            }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'scan' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
+              }`}
           >
             <Camera className="w-5 h-5 mb-1" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Scanner</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">Câmara</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('live')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${
-              activeTab === 'live' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-            }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'live' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
+              }`}
           >
             <Activity className="w-5 h-5 mb-1" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Live</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">Direto</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${
-              activeTab === 'history' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-            }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'history' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
+              }`}
           >
             <History className="w-5 h-5 mb-1" />
             <span className="text-[10px] font-black uppercase tracking-widest">Arquivo</span>
@@ -152,18 +149,18 @@ function App() {
 
       {/* Modals */}
       {analysisResult && capturedImage && (
-        <AnalysisResultView 
-          result={analysisResult} 
-          image={capturedImage} 
+        <AnalysisResultView
+          result={analysisResult}
+          image={capturedImage}
           onClose={() => {
             setAnalysisResult(null);
             setCapturedImage(null);
-          }} 
+          }}
         />
       )}
 
       {analysisResult && (
-        <VoiceFeedback text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`} />
+        <VoiceFeedback text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`} trigger={analysisResult} />
       )}
     </div>
   );

@@ -30,7 +30,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        setError("Não foi possível acessar a câmera selecionada.");
+        setError("Não foi possível aceder à câmara selecionada.");
       }
     };
     
@@ -64,7 +64,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
         const result = await analyzePlantImage(base64);
         onResult(result, dataUrl);
       } catch (err) {
-        setError("Falha ao analisar imagem. Tente novamente.");
+        setError("Falha ao analisar a imagem. Tente novamente.");
       } finally {
         setIsAnalyzing(false);
       }
@@ -78,7 +78,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
         autoPlay 
         playsInline 
         className="w-full h-full object-cover"
-        aria-label="Feed da Câmera"
+        aria-label="Feed da Câmara"
       />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -99,7 +99,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
             transition-all transform active:scale-95 shadow-2xl
             ${isAnalyzing ? 'bg-gray-400 border-gray-300' : 'bg-green-500 hover:bg-green-600'}
           `}
-          aria-label={isAnalyzing ? "Analisando..." : "Analisar Saúde"}
+          aria-label={isAnalyzing ? "A analisar..." : "Analisar Saúde"}
         >
           {isAnalyzing ? (
              <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
@@ -108,7 +108,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
           )}
         </button>
         <p className="text-white text-sm font-black tracking-widest uppercase drop-shadow-md bg-black/30 px-4 py-1 rounded-full backdrop-blur-sm">
-          {isAnalyzing ? "Analisando..." : "Clique para Diagnosticar"}
+          {isAnalyzing ? "A analisar..." : "Clique para Diagnosticar"}
         </p>
       </div>
     </div>

@@ -36,10 +36,28 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
     }
   };
 
+  const translateStatus = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'HEALTHY': return 'Saudável';
+      case 'THIRSTY': return 'Precisa de Água';
+      case 'SICK': return 'Doente';
+      default: return 'Desconhecido';
+    }
+  };
+
+  const translateLight = (level: string) => {
+    switch (level?.toUpperCase()) {
+      case 'HIGH': return 'Alta';
+      case 'ADEQUATE': return 'Adequada';
+      case 'LOW': return 'Baixa';
+      default: return 'Desconhecido';
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-10 duration-300">
-        
+
         <div className="flex items-center justify-between px-6 py-4 border-b border-emerald-50 bg-white sticky top-0 z-10">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -68,12 +86,12 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
             <div className={`flex flex-col items-center justify-center p-4 rounded-[1.5rem] border ${getStatusColor(result.status)}`}>
               {getStatusIcon(result.status)}
               <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Saúde</span>
-              <span className="font-bold tracking-tight">{result.status || 'Desconhecido'}</span>
+              <span className="font-bold tracking-tight">{translateStatus(result.status)}</span>
             </div>
             <div className={`flex flex-col items-center justify-center p-4 rounded-[1.5rem] border ${getLightColor(result.lightLevel)}`}>
               <Sun className="w-6 h-6" />
               <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Luz</span>
-              <span className="font-bold tracking-tight">{result.lightLevel || 'Desconhecido'}</span>
+              <span className="font-bold tracking-tight">{translateLight(result.lightLevel)}</span>
             </div>
           </div>
 
@@ -95,7 +113,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
             </div>
           </div>
         </div>
-        
+
         <div className="p-6 pt-2 bg-white border-t border-emerald-50">
           <button onClick={onClose} className="w-full py-4 bg-[#064E3B] hover:bg-[#064E3B]/90 text-white rounded-[1.5rem] font-bold tracking-wide transition-all shadow-xl active:scale-95">
             Fechar e Continuar

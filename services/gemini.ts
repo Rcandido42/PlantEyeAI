@@ -60,7 +60,7 @@ export const generateSpeech = async (text: string): Promise<string> => {
       responseModalities: [Modality.AUDIO],
       speechConfig: {
         voiceConfig: {
-          prebuiltVoiceConfig: { voiceName: 'Kore' },
+          prebuiltVoiceConfig: { voiceName: 'Aoede' },
         },
       },
     },
@@ -77,7 +77,7 @@ export const analyzePlantImage = async (base64Image: string): Promise<AnalysisRe
     contents: {
       parts: [
         { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-        { text: "Identifique a planta e forneça um diagnóstico de saúde (HEALTHY, THIRSTY, SICK) e luz (LOW, ADEQUATE, HIGH). Responda em português." }
+        { text: "Identifique a planta e forneça um diagnóstico de saúde (HEALTHY, THIRSTY, SICK) e luz (LOW, ADEQUATE, HIGH). Responda em português de Portugal (pt-PT)." }
       ]
     },
     config: {
@@ -103,11 +103,11 @@ export const analyzePlantImage = async (base64Image: string): Promise<AnalysisRe
       species: data.species || "Planta não identificada",
       status: (data.status as PlantStatus) || PlantStatus.UNKNOWN,
       lightLevel: (data.lightLevel as LightLevel) || LightLevel.UNKNOWN,
-      summary: data.summary || "Não foi possível analisar detalhadamente.",
-      recommendation: data.recommendation || "Tente capturar de outro ângulo.",
+      summary: data.summary || "Não foi possível analisar em detalhe.",
+      recommendation: data.recommendation || "Tente captar de outro ângulo.",
       confidence: data.confidence || 0
     };
   } catch (e) {
-    throw new Error("Erro ao interpretar resposta da IA.");
+    throw new Error("Erro ao interpretar a resposta da IA.");
   }
 };
