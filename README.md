@@ -38,7 +38,7 @@ Para correres este projeto na tua máquina, segue estes passos:
 Certifica-te de que tens o Node.js (versão 18 ou superior) instalado e uma chave de API válida do Google Gemini (Google AI Studio).
 
 2. Clonar o repositório
-git clone [https://github.com/TEU_USUARIO/planteye.git](https://github.com/joaopeccanha18/PlantEyeAI)
+git clone https://github.com/joaopeccanha18/PlantEyeAI
 cd planteye
 
 3. Instalar dependências
