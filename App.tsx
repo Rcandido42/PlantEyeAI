@@ -7,8 +7,10 @@ import VoiceFeedback from './components/VoiceFeedback';
 import CameraSelector from './components/CameraSelector';
 import HistoryView from './components/HistoryView';
 import AuthModal from './components/AuthModal';
+import QuotaAlert from './components/QuotaAlert';
 import { useHistory } from './hooks/useHistory';
 import { useAuth } from './hooks/useAuth';
+import { useQuotaAlert } from './hooks/useQuotaAlert';
 import { AnalysisResult } from './types';
 
 function App() {
@@ -20,6 +22,7 @@ function App() {
 
   const { session, loading, signIn, signUp, signOut } = useAuth();
   const { history, addHistoryItem, clearHistory, deleteHistoryItem } = useHistory(session);
+  const { quotaAlert, dismissQuotaAlert, handleGeminiError } = useQuotaAlert();
 
   if (loading) {
     return (
@@ -78,6 +81,7 @@ function App() {
               isAnalyzing={isAnalyzing}
               setIsAnalyzing={setIsAnalyzing}
               deviceId={selectedDeviceId}
+              onGeminiError={handleGeminiError}
             />
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm">
@@ -111,7 +115,7 @@ function App() {
                 <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Tempo Real</span>
               </div>
             </div>
-            <LiveAssistant isActive={activeTab === 'live'} deviceId={selectedDeviceId} />
+            <LiveAssistant isActive={activeTab === 'live'} deviceId={selectedDeviceId} onGeminiError={handleGeminiError} />
           </div>
         )}
 
@@ -151,6 +155,10 @@ function App() {
       </nav>
 
       {!session && <AuthModal onSignIn={signIn} onSignUp={signUp} />}
+
+      {quotaAlert && (
+        <QuotaAlert alert={quotaAlert} onDismiss={dismissQuotaAlert} />
+      )}
 
       {analysisResult && capturedImage && (
         <AnalysisResultView

@@ -5,9 +5,10 @@ import { Modality, LiveServerMessage, Blob } from '@google/genai';
 interface LiveAssistantProps {
   isActive: boolean;
   deviceId?: string;
+  onGeminiError?: (error: unknown) => boolean;
 }
 
-const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => {
+const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGeminiError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -158,6 +159,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
         sessionRef.current = session;
       } catch (err) {
         console.error("Erro ao iniciar sessão Live:", err);
+        onGeminiError?.(err);
       }
     };
 

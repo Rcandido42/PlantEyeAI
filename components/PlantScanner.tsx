@@ -7,9 +7,10 @@ interface PlantScannerProps {
   isAnalyzing: boolean;
   setIsAnalyzing: (val: boolean) => void;
   deviceId?: string;
+  onGeminiError?: (error: unknown) => boolean;
 }
 
-const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setIsAnalyzing, deviceId }) => {
+const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setIsAnalyzing, deviceId, onGeminiError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,10 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
         const result = await analyzePlantImage(base64);
         onResult(result, dataUrl);
       } catch (err) {
-        setError("Falha ao analisar a imagem. Tente novamente.");
+        const isQuotaError = onGeminiError?.(err);
+        if (!isQuotaError) {
+          setError("Falha ao analisar a imagem. Tente novamente.");
+        }
       } finally {
         setIsAnalyzing(false);
       }
