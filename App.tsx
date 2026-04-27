@@ -75,15 +75,6 @@ function App() {
   // Quota Gemini (rcandido)
   const { quotaAlert, dismissQuotaAlert, handleGeminiError } = useQuotaAlert();
 
-  // Ecrã de carregamento enquanto a sessão é restaurada
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAF8] flex items-center justify-center">
-        <Leaf className="w-10 h-10 text-[#064E3B] fill-current animate-pulse" />
-      </div>
-    );
-  }
-
   /**
    * handleCapture — chamado pelo PlantScanner quando o técnico tira foto.
    * Guarda sempre no IndexedDB (offline-first) e adiciona ao histórico.
@@ -115,6 +106,15 @@ function App() {
     },
     [addHistoryItem, session]
   );
+
+  // Ecrã de carregamento enquanto a sessão é restaurada
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAF8] flex items-center justify-center">
+        <Leaf className="w-10 h-10 text-[#064E3B] fill-current animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAF8] text-[#064E3B] font-sans pb-24">
