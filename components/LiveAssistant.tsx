@@ -56,16 +56,12 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
     const startSession = async () => {
       stopAllSources();
 
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-
       try {
-        // iOS fix: pedir vídeo e áudio separadamente.
-        // Se pedirmos os dois juntos e o áudio falhar, o vídeo também não aparece.
+        // iOS fix: constraints simples sem width/height que podem falhar no iPhone
         const videoConstraints: MediaStreamConstraints = {
           video: deviceId
             ? { deviceId: { exact: deviceId } }
-            : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+            : { facingMode: 'environment' },
         };
         const videoStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
 
@@ -77,6 +73,10 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
         } catch (audioErr) {
           console.warn('[LiveAssistant] Sem acesso ao microfone (a continuar só com vídeo):', audioErr);
         }
+
+        // iOS fix: criar AudioContext DEPOIS de obter o stream (requer gesto do utilizador)
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
 
         // Junta as tracks num único stream
         const stream = new MediaStream([
@@ -90,7 +90,11 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
           return;
         }
 
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          // iOS Safari requer .play() explícito após definir srcObject
+          videoRef.current.play().catch(() => {});
+        }
 
         // 🔄 Tenta conectar com rotação de chaves
         const connectWithRetry = async (): Promise<any> => {
