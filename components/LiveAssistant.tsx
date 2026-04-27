@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { ai, decodeBase64, decodeAudioData, encode } from '../services/gemini';
+import { getAI, keyManager, decodeBase64, decodeAudioData, encode } from '../services/gemini';
 import { Modality, LiveServerMessage, Blob } from '@google/genai';
 
 interface LiveAssistantProps {
   isActive: boolean;
   deviceId?: string;
+  onGeminiError?: (error: unknown) => boolean;
 }
 
-const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => {
+const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGeminiError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -78,76 +79,98 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
 
         if (videoRef.current) videoRef.current.srcObject = stream;
 
-        const sessionPromise = ai.live.connect({
-          model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
-            },
-            systemInstruction: "Tu és o PlantEye, um assistente especializado para pessoas com deficiência visual. Ajuda-as a cuidar das suas plantas analisando o vídeo e o áudio. Sê descritivo mas extremamente conciso. Fala português de Portugal (pt-PT) e dá orientações práticas sobre rega, luz e saúde vegetal.",
-          },
-          callbacks: {
-            onmessage: async (message: LiveServerMessage) => {
-              const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-              if (audioData && audioContextRef.current) {
-                const buffer = await decodeAudioData(decodeBase64(audioData), audioContextRef.current);
-                const source = audioContextRef.current.createBufferSource();
-                source.buffer = buffer;
-                source.connect(audioContextRef.current.destination);
-                
-                const now = audioContextRef.current.currentTime;
-                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, now);
-                
-                source.start(nextStartTimeRef.current);
-                nextStartTimeRef.current += buffer.duration;
-                
-                sourcesRef.current.add(source);
-                source.onended = () => sourcesRef.current.delete(source);
-              }
+        // 🔄 Tenta conectar com rotação de chaves
+        const connectWithRetry = async (): Promise<any> => {
+          let lastError: unknown;
+          for (let attempt = 0; attempt < keyManager.totalKeys; attempt++) {
+            if (keyManager.allExhausted) break;
+            try {
+              const session = await getAI().live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                config: {
+                  responseModalities: [Modality.AUDIO],
+                  speechConfig: {
+                    voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } },
+                  },
+                  systemInstruction: "Tu és o PlantEye, um assistente especializado para pessoas com deficiência visual. Ajuda-as a cuidar das suas plantas analisando o vídeo e o áudio. Sê descritivo mas extremamente conciso. Fala português de Portugal (pt-PT) e dá orientações práticas sobre rega, luz e saúde vegetal.",
+                },
+                callbacks: {
+                  onmessage: async (message: LiveServerMessage) => {
+                    const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                    if (audioData && audioContextRef.current) {
+                      const buffer = await decodeAudioData(decodeBase64(audioData), audioContextRef.current);
+                      const source = audioContextRef.current.createBufferSource();
+                      source.buffer = buffer;
+                      source.connect(audioContextRef.current.destination);
+                      
+                      const now = audioContextRef.current.currentTime;
+                      nextStartTimeRef.current = Math.max(nextStartTimeRef.current, now);
+                      
+                      source.start(nextStartTimeRef.current);
+                      nextStartTimeRef.current += buffer.duration;
+                      
+                      sourcesRef.current.add(source);
+                      source.onended = () => sourcesRef.current.delete(source);
+                    }
 
-              if (message.serverContent?.interrupted) {
-                stopAllSources();
-              }
-            },
-            onopen: () => {
-              if (inputAudioContextRef.current) {
-                const source = inputAudioContextRef.current.createMediaStreamSource(stream);
-                const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
-                
-                const muteNode = inputAudioContextRef.current.createGain();
-                muteNode.gain.value = 0;
+                    if (message.serverContent?.interrupted) {
+                      stopAllSources();
+                    }
+                  },
+                  onopen: () => {
+                    if (inputAudioContextRef.current) {
+                      const audioSource = inputAudioContextRef.current.createMediaStreamSource(stream);
+                      const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
+                      
+                      const muteNode = inputAudioContextRef.current.createGain();
+                      muteNode.gain.value = 0;
 
-                scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                  const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                  const pcmBlob = createBlob(inputData);
-                  sessionPromise.then((session) => {
-                    session.sendRealtimeInput({ media: pcmBlob });
-                  });
-                };
+                      scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
+                        const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                        const pcmBlob = createBlob(inputData);
+                        if (sessionRef.current) {
+                          sessionRef.current.sendRealtimeInput({ media: pcmBlob });
+                        }
+                      };
 
-                source.connect(scriptProcessor);
-                scriptProcessor.connect(muteNode);
-                muteNode.connect(inputAudioContextRef.current.destination);
-              }
+                      audioSource.connect(scriptProcessor);
+                      scriptProcessor.connect(muteNode);
+                      muteNode.connect(inputAudioContextRef.current.destination);
+                    }
 
-              intervalRef.current = setInterval(() => {
-                if (videoRef.current && canvasRef.current) {
-                  const ctx = canvasRef.current.getContext('2d');
-                  canvasRef.current.width = 320;
-                  canvasRef.current.height = 240;
-                  ctx?.drawImage(videoRef.current, 0, 0, 320, 240);
-                  const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
-                  sessionPromise.then(s => s.sendRealtimeInput({
-                    media: { data: base64, mimeType: 'image/jpeg' }
-                  }));
+                    intervalRef.current = setInterval(() => {
+                      if (videoRef.current && canvasRef.current) {
+                        const ctx = canvasRef.current.getContext('2d');
+                        canvasRef.current.width = 320;
+                        canvasRef.current.height = 240;
+                        ctx?.drawImage(videoRef.current, 0, 0, 320, 240);
+                        const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
+                        if (sessionRef.current) {
+                          sessionRef.current.sendRealtimeInput({
+                            media: { data: base64, mimeType: 'image/jpeg' }
+                          });
+                        }
+                      }
+                    }, 4000);
+                  }
                 }
-              }, 4000);
+              });
+              return session;
+            } catch (err) {
+              lastError = err;
+              if (keyManager.isQuotaError(err)) {
+                console.warn(`[LiveAssistant] ⚡ Chave ${keyManager.currentKeyIndex} esgotada, a rodar...`);
+                const rotated = keyManager.rotateKey();
+                if (!rotated) break;
+                continue;
+              }
+              throw err;
             }
           }
-        });
+          throw lastError;
+        };
 
-        const session = await sessionPromise;
+        const session = await connectWithRetry();
         
         // Se a ligação fantasma acabou de concluir a conexão à Google, nós fechamo-la de imediato!
         if (!isMounted) {
@@ -158,6 +181,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId }) => 
         sessionRef.current = session;
       } catch (err) {
         console.error("Erro ao iniciar sessão Live:", err);
+        onGeminiError?.(err);
       }
     };
 
