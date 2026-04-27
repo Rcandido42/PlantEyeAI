@@ -73,7 +73,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
         setIsAnalyzing(false);
       }
     }
-  }, [isAnalyzing, onResult, setIsAnalyzing]);
+  }, [isAnalyzing, onResult, setIsAnalyzing, onGeminiError]);
 
   return (
     <div className="relative w-full max-w-2xl mx-auto overflow-hidden rounded-[2rem] bg-black aspect-square shadow-2xl ring-4 ring-green-600/10">

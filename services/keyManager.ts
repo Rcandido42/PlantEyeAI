@@ -49,12 +49,10 @@ class KeyManager {
         .filter(k => k.length > 0);
     }
 
-    // Fallback para a chave única original
-    if (this.keys.length === 0) {
-      const singleKey = (process.env.API_KEY || process.env.GEMINI_API_KEY || '').trim();
-      if (singleKey) {
-        this.keys = [singleKey];
-      }
+    // Inclui a chave de fallback na pool de rotação se não for duplicado
+    const singleKey = (process.env.API_KEY || process.env.GEMINI_API_KEY || '').trim();
+    if (singleKey && !this.keys.includes(singleKey)) {
+      this.keys.push(singleKey);
     }
 
     if (this.keys.length === 0) {
