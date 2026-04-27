@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Leaf, Camera, History, Settings, Info, AlertCircle, CheckCircle2, Droplets, Sun, Activity, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Leaf, Camera, History, Settings, Info, Activity, Zap, LogOut } from 'lucide-react';
 import PlantScanner from './components/PlantScanner';
 import LiveAssistant from './components/LiveAssistant';
 import AnalysisResultView from './components/AnalysisResultView';
 import VoiceFeedback from './components/VoiceFeedback';
 import CameraSelector from './components/CameraSelector';
 import HistoryView from './components/HistoryView';
+import AuthModal from './components/AuthModal';
 import { useHistory } from './hooks/useHistory';
+import { useAuth } from './hooks/useAuth';
 import { AnalysisResult } from './types';
 
 function App() {
@@ -15,35 +17,41 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
-  const { history, addHistoryItem, clearHistory, deleteHistoryItem } = useHistory();
+
+  const { session, loading, signIn, signUp, signOut } = useAuth();
+  const { history, addHistoryItem, clearHistory, deleteHistoryItem } = useHistory(session);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAF8] flex items-center justify-center">
+        <Leaf className="w-10 h-10 text-[#064E3B] fill-current animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAF8] text-[#064E3B] font-sans pb-24">
-      {/* Header */}
-      {/* Header com Logótipo Ajustado (Flexbox) */}
       <header className="bg-white border-b border-emerald-100 px-6 py-6 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-
-          {/* INÍCIO DO LOGÓTIPO */}
           <div className="flex items-center gap-3">
-            {/* 1. A Caixa (PL + Folha + NT) */}
-            {/* Usamos flex e gap-0.5 para a folha ficar entre as letras sem atropelar */}
             <div className="border-[3px] border-[#064E3B] px-3 py-1 flex items-center justify-center gap-0.5">
               <span className="text-3xl font-black tracking-tighter text-[#064E3B]">PL</span>
-
-              {/* A folha agora é um elemento estático no fluxo, não absolute */}
               <Leaf className="w-7 h-7 text-[#064E3B] fill-current transform -rotate-12 flex-shrink-0 mt-0.5" />
-
               <span className="text-3xl font-black tracking-tighter text-[#064E3B]">NT</span>
             </div>
-
-            {/* 2. O Texto EYE (Fora da caixa) */}
             <span className="text-3xl font-black tracking-tighter text-[#064E3B] leading-none">EYE</span>
           </div>
-          {/* FIM DO LOGÓTIPO */}
-
           <div className="flex gap-3">
             <CameraSelector onDeviceSelect={setSelectedDeviceId} />
+            {session && (
+              <button
+                onClick={signOut}
+                className="p-2.5 rounded-full bg-emerald-50 text-[#064E3B] hover:bg-emerald-100 transition-colors"
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
             <button className="p-2.5 rounded-full bg-emerald-50 text-[#064E3B] hover:bg-emerald-100 transition-colors">
               <Settings className="w-5 h-5" />
             </button>
@@ -61,7 +69,6 @@ function App() {
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Modo Manual</span>
               </div>
             </div>
-
             <PlantScanner
               onResult={(result, image) => {
                 setAnalysisResult(result);
@@ -72,7 +79,6 @@ function App() {
               setIsAnalyzing={setIsAnalyzing}
               deviceId={selectedDeviceId}
             />
-
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm">
                 <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4">
@@ -110,7 +116,7 @@ function App() {
         )}
 
         {activeTab === 'history' && (
-          <HistoryView 
+          <HistoryView
             history={history}
             onClearHistory={clearHistory}
             onDeleteItem={deleteHistoryItem}
@@ -118,31 +124,25 @@ function App() {
         )}
       </main>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-8 left-6 right-6 bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[2.5rem] p-2 z-50 max-w-lg mx-auto">
         <div className="flex justify-between items-center">
           <button
             onClick={() => setActiveTab('scan')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'scan' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-              }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'scan' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'}`}
           >
             <Camera className="w-5 h-5 mb-1" />
             <span className="text-[10px] font-black uppercase tracking-widest">Câmara</span>
           </button>
-
           <button
             onClick={() => setActiveTab('live')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'live' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-              }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'live' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'}`}
           >
             <Activity className="w-5 h-5 mb-1" />
             <span className="text-[10px] font-black uppercase tracking-widest">Direto</span>
           </button>
-
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'history' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'
-              }`}
+            className={`flex-1 flex flex-col items-center py-3 rounded-[2rem] transition-all duration-300 ${activeTab === 'history' ? 'bg-[#064E3B] text-white shadow-lg scale-105' : 'text-emerald-800/40 hover:text-emerald-600'}`}
           >
             <History className="w-5 h-5 mb-1" />
             <span className="text-[10px] font-black uppercase tracking-widest">Arquivo</span>
@@ -150,20 +150,21 @@ function App() {
         </div>
       </nav>
 
-      {/* Modals */}
+      {!session && <AuthModal onSignIn={signIn} onSignUp={signUp} />}
+
       {analysisResult && capturedImage && (
         <AnalysisResultView
           result={analysisResult}
           image={capturedImage}
-          onClose={() => {
-            setAnalysisResult(null);
-            setCapturedImage(null);
-          }}
+          onClose={() => { setAnalysisResult(null); setCapturedImage(null); }}
         />
       )}
 
       {analysisResult && (
-        <VoiceFeedback text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`} trigger={analysisResult} />
+        <VoiceFeedback
+          text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`}
+          trigger={analysisResult}
+        />
       )}
     </div>
   );
