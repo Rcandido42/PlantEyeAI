@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, X, Zap, ShieldAlert, RefreshCw } from 'lucide-react';
+import { AlertTriangle, X, Zap, ShieldAlert, RefreshCw, ArrowRightLeft, CheckCircle } from 'lucide-react';
 import { QuotaAlertState } from '../hooks/useQuotaAlert';
 
 interface QuotaAlertProps {
@@ -23,6 +23,18 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
   };
 
   const config = {
+    key_rotated: {
+      icon: <ArrowRightLeft className="w-6 h-6" />,
+      title: 'Chave Rodada com Sucesso',
+      gradient: 'from-emerald-500 via-green-500 to-teal-500',
+      glowColor: 'shadow-emerald-500/30',
+      borderColor: 'border-emerald-400/30',
+      bgOverlay: 'bg-gradient-to-br from-emerald-950/95 to-teal-950/95',
+      iconBg: 'bg-emerald-500/20',
+      iconColor: 'text-emerald-300',
+      pulseColor: 'bg-emerald-400',
+      statusIcon: <CheckCircle className="w-3.5 h-3.5 text-emerald-400/70" />,
+    },
     quota_exhausted: {
       icon: <Zap className="w-6 h-6" />,
       title: 'Tokens Esgotados',
@@ -33,6 +45,7 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
       iconBg: 'bg-orange-500/20',
       iconColor: 'text-orange-300',
       pulseColor: 'bg-orange-400',
+      statusIcon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70" />,
     },
     rate_limited: {
       icon: <RefreshCw className="w-6 h-6" />,
@@ -44,6 +57,7 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
       iconBg: 'bg-yellow-500/20',
       iconColor: 'text-yellow-300',
       pulseColor: 'bg-yellow-400',
+      statusIcon: <RefreshCw className="w-3.5 h-3.5 text-yellow-400/70" />,
     },
     api_error: {
       icon: <ShieldAlert className="w-6 h-6" />,
@@ -55,31 +69,37 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
       iconBg: 'bg-red-500/20',
       iconColor: 'text-red-300',
       pulseColor: 'bg-red-400',
+      statusIcon: <ShieldAlert className="w-3.5 h-3.5 text-red-400/70" />,
     },
   };
 
   const c = config[alert.type];
 
+  // Para rotação bem-sucedida, não mostra backdrop bloqueante
+  const showBackdrop = alert.type !== 'key_rotated';
+
   return (
     <>
-      {/* Backdrop escuro sutil */}
-      <div
-        className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[100] transition-opacity duration-400 ${
-          isEntering && !isExiting ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={handleDismiss}
-      />
+      {/* Backdrop escuro sutil (não mostra para rotações bem-sucedidas) */}
+      {showBackdrop && (
+        <div
+          className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[100] transition-opacity duration-400 ${
+            isEntering && !isExiting ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleDismiss}
+        />
+      )}
 
       {/* Banner principal */}
       <div
-        className={`fixed top-6 left-4 right-4 z-[101] max-w-lg mx-auto transition-all duration-500 ease-out ${
+        className={`fixed ${showBackdrop ? 'top-6' : 'top-20'} left-4 right-4 z-[101] max-w-lg mx-auto transition-all duration-500 ease-out ${
           isEntering && !isExiting
             ? 'opacity-100 translate-y-0 scale-100'
             : 'opacity-0 -translate-y-8 scale-95'
         }`}
       >
         {/* Glow exterior */}
-        <div className={`absolute -inset-1 bg-gradient-to-r ${c.gradient} rounded-[2rem] blur-xl opacity-40 animate-pulse`} />
+        <div className={`absolute -inset-1 bg-gradient-to-r ${c.gradient} rounded-[2rem] blur-xl opacity-40 ${alert.type === 'key_rotated' ? '' : 'animate-pulse'}`} />
 
         {/* Card */}
         <div
@@ -97,7 +117,7 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
             <div className="flex items-start gap-4">
               {/* Ícone com animação de pulso */}
               <div className="flex-shrink-0 relative">
-                <div className={`absolute inset-0 ${c.pulseColor} rounded-2xl opacity-20 animate-ping`} />
+                <div className={`absolute inset-0 ${c.pulseColor} rounded-2xl opacity-20 ${alert.type === 'key_rotated' ? 'animate-pulse' : 'animate-ping'}`} />
                 <div className={`relative w-12 h-12 ${c.iconBg} rounded-2xl flex items-center justify-center ${c.iconColor}`}>
                   {c.icon}
                 </div>
@@ -112,7 +132,7 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
                   <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
                     <div className={`w-1.5 h-1.5 ${c.pulseColor} rounded-full animate-pulse`} />
                     <span className="text-white/50 text-[9px] font-black uppercase tracking-[0.15em]">
-                      Gemini API
+                      {alert.type === 'key_rotated' ? 'Auto-Rotação' : 'Gemini API'}
                     </span>
                   </div>
                 </div>
@@ -131,13 +151,22 @@ const QuotaAlert: React.FC<QuotaAlertProps> = ({ alert, onDismiss }) => {
               </button>
             </div>
 
-            {/* Dica extra para quota esgotada */}
+            {/* Dica extra contextual */}
             {alert.type === 'quota_exhausted' && (
               <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
+                {c.statusIcon}
                 <span className="text-white/40 text-xs leading-snug">
-                  Verifica a tua <span className="text-white/60 font-semibold">Google AI Studio</span> para mais detalhes sobre o consumo de tokens.
+                  Verifica a tua <span className="text-white/60 font-semibold">Google AI Studio</span> para mais detalhes ou adiciona mais chaves no ficheiro <span className="text-white/60 font-semibold">.env</span>
                 </span>
+              </div>
+            )}
+
+            {alert.type === 'key_rotated' && (
+              <div className="mt-3 flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000 animate-pulse" style={{ width: '100%' }} />
+                </div>
+                <span className="text-white/30 text-[9px] font-black uppercase tracking-widest">Ativo</span>
               </div>
             )}
           </div>

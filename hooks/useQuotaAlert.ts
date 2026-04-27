@@ -1,14 +1,15 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { keyManager, KeyRotationEvent } from '../services/keyManager';
 
 export interface QuotaAlertState {
   isVisible: boolean;
   message: string;
-  type: 'quota_exhausted' | 'rate_limited' | 'api_error';
+  type: 'quota_exhausted' | 'rate_limited' | 'api_error' | 'key_rotated';
 }
 
 /**
  * Hook global para gerir alertas de quota/tokens da API Gemini.
- * Expõe um estado de alerta e funções para o mostrar/esconder.
+ * Integra com o KeyManager para mostrar notificações de rotação de chaves.
  */
 export function useQuotaAlert() {
   const [alert, setAlert] = useState<QuotaAlertState | null>(null);
@@ -19,6 +20,13 @@ export function useQuotaAlert() {
       clearTimeout(dismissTimeoutRef.current);
     }
     setAlert(state);
+
+    // Auto-dismiss para alertas de rotação bem-sucedida (5 segundos)
+    if (state.type === 'key_rotated') {
+      dismissTimeoutRef.current = setTimeout(() => {
+        setAlert(null);
+      }, 5000);
+    }
   }, []);
 
   const dismissAlert = useCallback(() => {
@@ -27,6 +35,27 @@ export function useQuotaAlert() {
       clearTimeout(dismissTimeoutRef.current);
     }
   }, []);
+
+  // 🔄 Escuta eventos de rotação do KeyManager
+  useEffect(() => {
+    const unsubscribe = keyManager.onRotation((event: KeyRotationEvent) => {
+      if (event.type === 'rotated') {
+        showAlert({
+          isVisible: true,
+          message: `Chave ${event.fromIndex} esgotada. Trocou automaticamente para a chave ${event.toIndex} de ${event.totalKeys}. Restam ${event.remainingKeys} chave(s) disponíveis.`,
+          type: 'key_rotated',
+        });
+      } else if (event.type === 'all_exhausted') {
+        showAlert({
+          isVisible: true,
+          message: `Todas as ${event.totalKeys} chave(s) da API Gemini foram esgotadas. Adiciona mais chaves no ficheiro .env ou aguarda que a quota seja reposta.`,
+          type: 'quota_exhausted',
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [showAlert]);
 
   /**
    * Analisa um erro da API Gemini e, se for um problema de quota/tokens,
@@ -45,16 +74,21 @@ export function useQuotaAlert() {
       errorString.includes('too many requests') ||
       errorString.includes('resource_exhausted')
     ) {
-      // Verificar se é rate limit temporário ou quota esgotada
-      const isRateLimit = errorString.includes('rate limit') || errorString.includes('too many requests');
-      
-      showAlert({
-        isVisible: true,
-        message: isRateLimit
-          ? 'Estás a fazer pedidos demasiado rápido. Aguarda uns segundos e tenta novamente.'
-          : 'A quota de tokens da API Gemini foi esgotada. Verifica o teu plano ou aguarda até a quota ser reposta.',
-        type: isRateLimit ? 'rate_limited' : 'quota_exhausted',
-      });
+      // Se o keyManager já tratou (todas esgotadas), o listener acima já mostrou o alerta.
+      // Mas se só há 1 chave, mostramos aqui.
+      if (keyManager.totalKeys <= 1 || keyManager.allExhausted) {
+        const isRateLimit = errorString.includes('rate limit') || errorString.includes('too many requests');
+        
+        showAlert({
+          isVisible: true,
+          message: isRateLimit
+            ? 'Estás a fazer pedidos demasiado rápido. Aguarda uns segundos e tenta novamente.'
+            : keyManager.totalKeys > 1
+              ? `Todas as ${keyManager.totalKeys} chaves da API Gemini foram esgotadas. Adiciona mais chaves ou aguarda.`
+              : 'A quota de tokens da API Gemini foi esgotada. Adiciona mais chaves no .env ou aguarda até a quota ser reposta.',
+          type: isRateLimit ? 'rate_limited' : 'quota_exhausted',
+        });
+      }
       return true;
     }
 
