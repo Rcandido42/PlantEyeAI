@@ -58,19 +58,32 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
 
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      
-      const constraints: MediaStreamConstraints = { 
-        video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        
+        // iOS fix: pedir vídeo e áudio separadamente.
+        // Se pedirmos os dois juntos e o áudio falhar, o vídeo também não aparece.
+        const videoConstraints: MediaStreamConstraints = {
+          video: deviceId
+            ? { deviceId: { exact: deviceId } }
+            : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        };
+        const videoStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+
+        let audioStream: MediaStream | null = null;
+        try {
+          audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          });
+        } catch (audioErr) {
+          console.warn('[LiveAssistant] Sem acesso ao microfone (a continuar só com vídeo):', audioErr);
+        }
+
+        // Junta as tracks num único stream
+        const stream = new MediaStream([
+          ...videoStream.getVideoTracks(),
+          ...(audioStream ? audioStream.getAudioTracks() : []),
+        ]);
+
         // Se o componente foi reiniciado enquanto a câmara abria, cancela imediatamente!
         if (!isMounted) {
           stream.getTracks().forEach(t => t.stop());
@@ -203,8 +216,8 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
   }, [isActive, deviceId]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto rounded-[3rem] overflow-hidden shadow-2xl bg-black border-4 border-[#064E3B]/20">
-      <video ref={videoRef} autoPlay playsInline muted className="w-full aspect-video object-cover" />
+    <div className="relative w-full mx-auto rounded-[2rem] overflow-hidden shadow-2xl bg-black border-4 border-[#064E3B]/20" style={{ minHeight: '70vh' }}>
+      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover absolute inset-0" style={{ minHeight: '70vh' }} />
       <canvas ref={canvasRef} className="hidden" />
       
       <div className="absolute top-6 left-6 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
