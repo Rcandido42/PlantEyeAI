@@ -1,14 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { getAI, keyManager, decodeBase64, decodeAudioData, encode } from '../services/gemini';
 import { Modality, LiveServerMessage, Blob } from '@google/genai';
+import { AnalysisResult, PlantStatus, LightLevel } from '../types';
 
 interface LiveAssistantProps {
   isActive: boolean;
   deviceId?: string;
   onGeminiError?: (error: unknown) => boolean;
+  onSessionEnd?: (result: AnalysisResult, imageDataUrl: string) => void;
 }
 
-const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGeminiError }) => {
+const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGeminiError, onSessionEnd }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -17,13 +19,12 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
   const sessionRef = useRef<any>(null);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const intervalRef = useRef<any>(null);
+  const lastFrameRef = useRef<string | null>(null);
+  const reportGeneratedRef = useRef(false);
 
   const stopAllSources = () => {
     sourcesRef.current.forEach(s => {
-      try { 
-        s.stop(); 
-        s.disconnect();
-      } catch(e) {}
+      try { s.stop(); s.disconnect(); } catch(e) {}
     });
     sourcesRef.current.clear();
     nextStartTimeRef.current = 0;
@@ -36,32 +37,81 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
       const s = Math.max(-1, Math.min(1, data[i]));
       int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
     }
-    return {
-      data: encode(new Uint8Array(int16.buffer)),
-      mimeType: 'audio/pcm;rate=16000',
-    };
+    return { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
+  };
+
+  const generateReport = async (imageDataUrl: string) => {
+    if (reportGeneratedRef.current || !imageDataUrl) return;
+    reportGeneratedRef.current = true;
+
+    try {
+      const base64 = imageDataUrl.split(',')[1];
+
+      const result = await keyManager.withRetry(async (ai) => {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [{
+            role: 'user',
+            parts: [
+              { inlineData: { data: base64, mimeType: 'image/jpeg' } },
+              {
+                text: `Analisa esta imagem de uma planta captada durante uma sessão de monitorização em direto.
+Responde APENAS com um JSON válido sem markdown, exatamente neste formato:
+{
+  "species": "nome da espécie ou 'Desconhecida'",
+  "status": "HEALTHY" | "THIRSTY" | "SICK" | "UNKNOWN",
+  "lightLevel": "LOW" | "ADEQUATE" | "HIGH" | "UNKNOWN",
+  "summary": "resumo em 1-2 frases do estado observado durante a sessão",
+  "recommendation": "recomendação prática em 1 frase",
+  "confidence": número entre 0 e 1
+}`
+              }
+            ]
+          }]
+        });
+
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+
+        return {
+          species: parsed.species ?? 'Desconhecida',
+          status: (parsed.status as PlantStatus) ?? PlantStatus.UNKNOWN,
+          lightLevel: (parsed.lightLevel as LightLevel) ?? LightLevel.UNKNOWN,
+          summary: parsed.summary ?? '',
+          recommendation: parsed.recommendation ?? '',
+          confidence: parsed.confidence ?? 0,
+        } as AnalysisResult;
+      });
+
+      onSessionEnd?.(result, imageDataUrl);
+    } catch (err) {
+      console.warn('[LiveAssistant] Falha ao gerar relatório:', err);
+    }
   };
 
   useEffect(() => {
-    // 🛡️ A NOSSA PROTEÇÃO CONTRA LIGAÇÕES DUPLICADAS
-    let isMounted = true; 
+    let isMounted = true;
 
     if (!isActive) {
       stopAllSources();
       if (sessionRef.current) sessionRef.current.close();
       if (intervalRef.current) clearInterval(intervalRef.current);
+
+      if (lastFrameRef.current && onSessionEnd) {
+        generateReport(lastFrameRef.current);
+      }
       return;
     }
+
+    reportGeneratedRef.current = false;
 
     const startSession = async () => {
       stopAllSources();
 
       try {
-        // iOS fix: constraints simples sem width/height que podem falhar no iPhone
         const videoConstraints: MediaStreamConstraints = {
-          video: deviceId
-            ? { deviceId: { exact: deviceId } }
-            : { facingMode: 'environment' },
+          video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
         };
         const videoStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
 
@@ -71,32 +121,24 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           });
         } catch (audioErr) {
-          console.warn('[LiveAssistant] Sem acesso ao microfone (a continuar só com vídeo):', audioErr);
+          console.warn('[LiveAssistant] Sem acesso ao microfone:', audioErr);
         }
 
-        // iOS fix: criar AudioContext DEPOIS de obter o stream (requer gesto do utilizador)
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
         inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
 
-        // Junta as tracks num único stream
         const stream = new MediaStream([
           ...videoStream.getVideoTracks(),
           ...(audioStream ? audioStream.getAudioTracks() : []),
         ]);
 
-        // Se o componente foi reiniciado enquanto a câmara abria, cancela imediatamente!
-        if (!isMounted) {
-          stream.getTracks().forEach(t => t.stop());
-          return;
-        }
+        if (!isMounted) { stream.getTracks().forEach(t => t.stop()); return; }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // iOS Safari requer .play() explícito após definir srcObject
           videoRef.current.play().catch(() => {});
         }
 
-        // 🔄 Tenta conectar com rotação de chaves
         const connectWithRetry = async (): Promise<any> => {
           let lastError: unknown;
           for (let attempt = 0; attempt < keyManager.totalKeys; attempt++) {
@@ -113,41 +155,32 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
                 },
                 callbacks: {
                   onmessage: async (message: LiveServerMessage) => {
-                    const audioData = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                    const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                     if (audioData && audioContextRef.current) {
                       const buffer = await decodeAudioData(decodeBase64(audioData), audioContextRef.current);
                       const source = audioContextRef.current.createBufferSource();
                       source.buffer = buffer;
                       source.connect(audioContextRef.current.destination);
-                      
                       const now = audioContextRef.current.currentTime;
                       nextStartTimeRef.current = Math.max(nextStartTimeRef.current, now);
-                      
                       source.start(nextStartTimeRef.current);
                       nextStartTimeRef.current += buffer.duration;
-                      
                       sourcesRef.current.add(source);
                       source.onended = () => sourcesRef.current.delete(source);
                     }
-
-                    if (message.serverContent?.interrupted) {
-                      stopAllSources();
-                    }
+                    if (message.serverContent?.interrupted) stopAllSources();
                   },
                   onopen: () => {
                     if (inputAudioContextRef.current) {
                       const audioSource = inputAudioContextRef.current.createMediaStreamSource(stream);
                       const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
-                      
                       const muteNode = inputAudioContextRef.current.createGain();
                       muteNode.gain.value = 0;
 
-                      scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                        const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                      scriptProcessor.onaudioprocess = (e) => {
+                        const inputData = e.inputBuffer.getChannelData(0);
                         const pcmBlob = createBlob(inputData);
-                        if (sessionRef.current) {
-                          sessionRef.current.sendRealtimeInput({ media: pcmBlob });
-                        }
+                        if (sessionRef.current) sessionRef.current.sendRealtimeInput({ media: pcmBlob });
                       };
 
                       audioSource.connect(scriptProcessor);
@@ -162,10 +195,9 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
                         canvasRef.current.height = 240;
                         ctx?.drawImage(videoRef.current, 0, 0, 320, 240);
                         const base64 = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
+                        lastFrameRef.current = canvasRef.current.toDataURL('image/jpeg', 0.8);
                         if (sessionRef.current) {
-                          sessionRef.current.sendRealtimeInput({
-                            media: { data: base64, mimeType: 'image/jpeg' }
-                          });
+                          sessionRef.current.sendRealtimeInput({ media: { data: base64, mimeType: 'image/jpeg' } });
                         }
                       }
                     }, 4000);
@@ -176,7 +208,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
             } catch (err) {
               lastError = err;
               if (keyManager.isQuotaError(err)) {
-                console.warn(`[LiveAssistant] ⚡ Chave ${keyManager.currentKeyIndex} esgotada, a rodar...`);
+                console.warn(`[LiveAssistant] Chave ${keyManager.currentKeyIndex} esgotada, a rodar...`);
                 const rotated = keyManager.rotateKey();
                 if (!rotated) break;
                 continue;
@@ -188,12 +220,8 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
         };
 
         const session = await connectWithRetry();
-        
-        // Se a ligação fantasma acabou de concluir a conexão à Google, nós fechamo-la de imediato!
-        if (!isMounted) {
-          session.close();
-          return;
-        }
+
+        if (!isMounted) { session.close(); return; }
 
         sessionRef.current = session;
       } catch (err) {
@@ -205,9 +233,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
     startSession();
 
     return () => {
-      // Quando o React tenta fechar o componente, sinalizamos que ele "morreu"
-      isMounted = false; 
-      
+      isMounted = false;
       stopAllSources();
       if (sessionRef.current) sessionRef.current.close();
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -223,7 +249,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
     <div className="relative w-full mx-auto rounded-[2rem] overflow-hidden shadow-2xl bg-black border-4 border-[#064E3B]/20" style={{ minHeight: '70vh' }}>
       <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover absolute inset-0" style={{ minHeight: '70vh' }} />
       <canvas ref={canvasRef} className="hidden" />
-      
+
       <div className="absolute top-6 left-6 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
         <div className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse" />
         <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Fluxo Sensorial Activo</span>
@@ -233,28 +259,19 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-1.5 h-6">
             {[...Array(6)].map((_, i) => (
-              <div 
-                key={i} 
-                className="w-1.5 bg-emerald-400 rounded-full animate-wave" 
-                style={{ 
-                  animationDelay: `${i * 0.15}s`
-                }} 
-              />
+              <div key={i} className="w-1.5 bg-emerald-400 rounded-full animate-wave" style={{ animationDelay: `${i * 0.15}s` }} />
             ))}
           </div>
-          <p className="text-white font-bold text-sm tracking-wide">
-            PlantEye está a ouvir e a observar
-          </p>
+          <p className="text-white font-bold text-sm tracking-wide">PlantEye está a ouvir e a observar</p>
         </div>
       </div>
+
       <style>{`
         @keyframes wave {
           0%, 100% { height: 40%; transform: scaleY(1); }
           50% { height: 100%; transform: scaleY(1.2); }
         }
-        .animate-wave {
-          animation: wave 1.2s ease-in-out infinite;
-        }
+        .animate-wave { animation: wave 1.2s ease-in-out infinite; }
       `}</style>
     </div>
   );

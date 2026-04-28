@@ -181,6 +181,7 @@ function App() {
               isActive={activeTab === 'live'}
               deviceId={selectedDeviceId}
               onGeminiError={handleGeminiError}
+              onSessionEnd={handleCapture}
             />
           </div>
         )}
