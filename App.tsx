@@ -126,9 +126,9 @@ function App() {
           {/* Logótipo */}
           <div className="flex items-center gap-3">
             <div className="border-[3px] border-[#064E3B] px-3 py-1 flex items-center justify-center gap-0.5">
-              <span className="text-3xl font-black tracking-tighter text-[#064E3B]">EU</span>
+              <span className="text-3xl font-black tracking-tighter text-[#064E3B]">PL</span>
               <Leaf className="w-7 h-7 text-[#064E3B] fill-current transform -rotate-12 flex-shrink-0 mt-0.5" />
-              <span className="text-3xl font-black tracking-tighter text-[#064E3B]">CA</span>
+              <span className="text-3xl font-black tracking-tighter text-[#064E3B]">NT</span>
             </div>
             <span className="text-3xl font-black tracking-tighter text-[#064E3B] leading-none">
               EYE
