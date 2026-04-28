@@ -1,15 +1,3 @@
-/**
- * App.tsx — EucalyptusEye (merge: offline sync + auth + quota alert)
- * ─────────────────────────────────────────────────────────────────────
- * Combina:
- *  [HEAD]      - Suporte offline (IndexedDB), GPS, badge de pendentes,
- *                banner online/offline, tab Mapa (Fase 2)
- *  [rcandido]  - Autenticação Supabase (AuthModal + useAuth),
- *                gestão de quota Gemini (QuotaAlert + useQuotaAlert),
- *                onGeminiError no PlantScanner e LiveAssistant
- * ─────────────────────────────────────────────────────────────────────
- */
-
 import React, { useState, useCallback } from 'react';
 import {
   Leaf,
@@ -34,8 +22,6 @@ import CameraSelector from './components/CameraSelector';
 import HistoryView from './components/HistoryView';
 import AuthModal from './components/AuthModal';
 import QuotaAlert from './components/QuotaAlert';
-// Fase 2
-// import MapView from './components/MapView';
 
 import { useHistory } from './hooks/useHistory';
 import { useOfflineSync } from './hooks/useOfflineSync';
@@ -50,11 +36,7 @@ import {
 
 import { AnalysisResult } from './types';
 
-// ── Tipos ──────────────────────────────────────────────────────────────
-
 type ActiveTab = 'scan' | 'live' | 'history' | 'map';
-
-// ── Componente ─────────────────────────────────────────────────────────
 
 function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('scan');
@@ -63,29 +45,17 @@ function App() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
 
-  // Auth (rcandido)
   const { session, loading, signIn, signUp, signOut } = useAuth();
-
-  // Histórico — passa a sessão para persistência por utilizador (rcandido)
   const { history, addHistoryItem, clearHistory, deleteHistoryItem } = useHistory(session);
-
-  // Offline sync (HEAD)
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
-
-  // Quota Gemini (rcandido)
   const { quotaAlert, dismissQuotaAlert, handleGeminiError } = useQuotaAlert();
 
-  /**
-   * handleCapture — chamado pelo PlantScanner quando o técnico tira foto.
-   * Guarda sempre no IndexedDB (offline-first) e adiciona ao histórico.
-   */
   const handleCapture = useCallback(
     async (result: AnalysisResult, imageDataUrl: string) => {
       setAnalysisResult(result);
       setCapturedImage(imageDataUrl);
       addHistoryItem(result, imageDataUrl);
 
-      // Converte data URL → Blob para guardar no IndexedDB
       try {
         const res = await fetch(imageDataUrl);
         const blob = await res.blob();
@@ -100,14 +70,12 @@ function App() {
           userId: uid,
         });
       } catch (err) {
-        // Falha silenciosa — o resultado de IA já foi mostrado ao utilizador
         console.warn('[Offline] Não foi possível guardar no IndexedDB:', err);
       }
     },
     [addHistoryItem, session]
   );
 
-  // Ecrã de carregamento enquanto a sessão é restaurada
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAF8] flex items-center justify-center">
@@ -119,11 +87,9 @@ function App() {
   return (
     <div className="min-h-screen bg-[#F8FAF8] text-[#064E3B] font-sans pb-24">
 
-      {/* ── Header ──────────────────────────────────────────────── */}
       <header className="bg-white border-b border-emerald-100 px-6 py-6 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
 
-          {/* Logótipo */}
           <div className="flex items-center gap-3">
             <div className="border-[3px] border-[#064E3B] px-3 py-1 flex items-center justify-center gap-0.5">
               <span className="text-3xl font-black tracking-tighter text-[#064E3B]">PL</span>
@@ -135,9 +101,7 @@ function App() {
             </span>
           </div>
 
-          {/* Acções do header */}
           <div className="flex items-center gap-3">
-            {/* Badge de pendentes (offline) */}
             {pendingCount > 0 && (
               <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 rounded-full">
                 {isSyncing ? (
@@ -148,7 +112,6 @@ function App() {
               </div>
             )}
 
-            {/* Indicador online/offline */}
             <div
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
                 ${isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
@@ -163,7 +126,6 @@ function App() {
 
             <CameraSelector onDeviceSelect={setSelectedDeviceId} />
 
-            {/* Botão de logout (só visível quando autenticado) */}
             {session && (
               <button
                 onClick={signOut}
@@ -181,7 +143,6 @@ function App() {
         </div>
       </header>
 
-      {/* ── Banner offline ───────────────────────────────────────── */}
       {!isOnline && (
         <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-center">
           <p className="text-xs text-amber-800 font-medium">
@@ -191,10 +152,8 @@ function App() {
         </div>
       )}
 
-      {/* ── Conteúdo principal ──────────────────────────────────── */}
       <main className="max-w-2xl mx-auto px-6 py-8">
 
-        {/* Tab: Diagnóstico */}
         {activeTab === 'scan' && (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -202,7 +161,7 @@ function App() {
               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-100 rounded-full">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                  Eucalyptus
+                  PlantEye
                 </span>
               </div>
             </div>
@@ -241,7 +200,6 @@ function App() {
           </div>
         )}
 
-        {/* Tab: Direto */}
         {activeTab === 'live' && (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -263,7 +221,6 @@ function App() {
           </div>
         )}
 
-        {/* Tab: Arquivo */}
         {activeTab === 'history' && (
           <HistoryView
             history={history}
@@ -272,7 +229,6 @@ function App() {
           />
         )}
 
-        {/* Tab: Mapa (Fase 2) */}
         {activeTab === 'map' && (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-emerald-400">
             <Map className="w-12 h-12" />
@@ -281,7 +237,6 @@ function App() {
         )}
       </main>
 
-      {/* ── Bottom Navigation ────────────────────────────────────── */}
       <nav className="fixed bottom-8 left-6 right-6 bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[2.5rem] p-2 z-50 max-w-lg mx-auto">
         <div className="flex justify-between items-center">
           {(
@@ -308,17 +263,12 @@ function App() {
         </div>
       </nav>
 
-      {/* ── Modais ───────────────────────────────────────────────── */}
-
-      {/* Modal de autenticação — bloqueia se não houver sessão */}
       {!session && <AuthModal onSignIn={signIn} onSignUp={signUp} />}
 
-      {/* Alerta de quota Gemini */}
       {quotaAlert && (
         <QuotaAlert alert={quotaAlert} onDismiss={dismissQuotaAlert} />
       )}
 
-      {/* Resultado de análise */}
       {analysisResult && capturedImage && (
         <AnalysisResultView
           result={analysisResult}
@@ -330,7 +280,6 @@ function App() {
         />
       )}
 
-      {/* Feedback de voz */}
       {analysisResult && (
         <VoiceFeedback
           text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`}
