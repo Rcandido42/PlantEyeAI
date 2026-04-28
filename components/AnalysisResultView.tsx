@@ -38,19 +38,19 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
 
   const translateStatus = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'HEALTHY': return 'Saudável';
-      case 'THIRSTY': return 'Precisa de Água';
-      case 'SICK': return 'Doente';
-      default: return 'Desconhecido';
+      case 'HEALTHY': return 'Talhão Saudável';
+      case 'THIRSTY': return 'Deficit Hídrico';
+      case 'SICK': return 'Anomalia Detetada';
+      default: return 'Inconclusivo';
     }
   };
 
   const translateLight = (level: string) => {
     switch (level?.toUpperCase()) {
-      case 'HIGH': return 'Alta';
-      case 'ADEQUATE': return 'Adequada';
-      case 'LOW': return 'Baixa';
-      default: return 'Desconhecido';
+      case 'HIGH': return 'Exposição Alta';
+      case 'ADEQUATE': return 'Exposição Adequada';
+      case 'LOW': return 'Exposição Baixa';
+      default: return 'Desconhecida';
     }
   };
 
@@ -63,7 +63,10 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
             <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
               <Leaf className="w-4 h-4 text-[#064E3B]" />
             </div>
-            <h3 className="font-black text-[#064E3B] tracking-tight uppercase text-sm">Diagnóstico IA</h3>
+            <div>
+              <h3 className="font-black text-[#064E3B] tracking-tight uppercase text-sm">Relatório de Campo</h3>
+              <p className="text-[9px] text-emerald-600/50 font-bold uppercase tracking-widest">Eucalyptus spp.</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-2 bg-emerald-50 rounded-full text-emerald-800 hover:bg-emerald-200 transition-colors">
             <X className="w-5 h-5" />
@@ -72,26 +75,27 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
 
         <div className="overflow-y-auto p-6 space-y-6">
           <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-emerald-50 shadow-inner relative">
-            <img src={image} alt="Planta analisada" className="w-full h-full object-cover" />
+            <img src={image} alt="Eucalipto analisado" className="w-full h-full object-cover" />
             <div className="absolute bottom-3 right-3 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full text-white text-[10px] font-black uppercase tracking-widest">
               Analisado por PlantEye
             </div>
           </div>
 
           <div className="text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/50 mb-1">Espécie identificada</p>
             <h2 className="text-3xl font-black text-[#064E3B] tracking-tighter leading-tight">{result.species}</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className={`flex flex-col items-center justify-center p-4 rounded-[1.5rem] border ${getStatusColor(result.status)}`}>
               {getStatusIcon(result.status)}
-              <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Saúde</span>
-              <span className="font-bold tracking-tight">{translateStatus(result.status)}</span>
+              <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Estado Fitossanitário</span>
+              <span className="font-bold tracking-tight text-center text-sm mt-0.5">{translateStatus(result.status)}</span>
             </div>
             <div className={`flex flex-col items-center justify-center p-4 rounded-[1.5rem] border ${getLightColor(result.lightLevel)}`}>
               <Sun className="w-6 h-6" />
-              <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Luz</span>
-              <span className="font-bold tracking-tight">{translateLight(result.lightLevel)}</span>
+              <span className="mt-2 text-[10px] font-black uppercase tracking-widest opacity-70">Radiação Solar</span>
+              <span className="font-bold tracking-tight text-center text-sm mt-0.5">{translateLight(result.lightLevel)}</span>
             </div>
           </div>
 
@@ -99,7 +103,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
             <div className="bg-emerald-50/50 p-5 rounded-[1.5rem] border border-emerald-100">
               <h4 className="flex items-center gap-2 font-bold text-emerald-900 mb-2">
                 <Info className="w-4 h-4 text-emerald-500" />
-                Resumo do Estado
+                Observação Técnica
               </h4>
               <p className="text-sm text-emerald-800 leading-relaxed font-medium">{result.summary}</p>
             </div>
@@ -107,16 +111,23 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
             <div className="bg-[#064E3B] p-5 rounded-[1.5rem] text-white shadow-lg">
               <h4 className="flex items-center gap-2 font-bold text-emerald-50 mb-2">
                 <Zap className="w-4 h-4 text-emerald-300" />
-                O que fazer agora?
+                Ação Recomendada
               </h4>
               <p className="text-sm text-emerald-100/90 leading-relaxed">{result.recommendation}</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+            <p className="text-xs text-emerald-700 font-medium">
+              Confiança do modelo: <span className="font-black">{Math.round((result.confidence ?? 0) * 100)}%</span>
+            </p>
           </div>
         </div>
 
         <div className="p-6 pt-2 bg-white border-t border-emerald-50">
           <button onClick={onClose} className="w-full py-4 bg-[#064E3B] hover:bg-[#064E3B]/90 text-white rounded-[1.5rem] font-bold tracking-wide transition-all shadow-xl active:scale-95">
-            Fechar e Continuar
+            Fechar Relatório
           </button>
         </div>
       </div>

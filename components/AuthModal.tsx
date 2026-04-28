@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Leaf, X, Mail, Lock, Loader2 } from 'lucide-react';
+import { Leaf, Mail, Lock, Loader2 } from 'lucide-react';
 
 interface AuthModalProps {
   onSignIn: (email: string, password: string) => Promise<any>;
@@ -31,7 +31,7 @@ export default function AuthModal({ onSignIn, onSignUp }: AuthModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-2">
           <div className="border-[3px] border-[#064E3B] px-2 py-0.5 flex items-center gap-0.5">
             <span className="text-xl font-black text-[#064E3B]">PL</span>
             <Leaf className="w-5 h-5 text-[#064E3B] fill-current -rotate-12" />
@@ -40,11 +40,17 @@ export default function AuthModal({ onSignIn, onSignUp }: AuthModalProps) {
           <span className="text-xl font-black text-[#064E3B]">EYE</span>
         </div>
 
+        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/50 mb-6">
+          Monitorização Florestal de Eucaliptos
+        </p>
+
         <h2 className="text-2xl font-black text-[#064E3B] mb-1">
           {mode === 'login' ? 'Bem-vindo de volta' : 'Criar conta'}
         </h2>
         <p className="text-sm text-emerald-700/60 mb-6">
-          {mode === 'login' ? 'Entra para aceder ao teu histórico.' : 'Regista-te para guardar os teus diagnósticos.'}
+          {mode === 'login'
+            ? 'Acede ao histórico de diagnósticos do teu talhão.'
+            : 'Regista-te para monitorizar a saúde do teu eucaliptal.'}
         </p>
 
         <div className="space-y-3">

@@ -25,9 +25,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
   const translateStatus = (status: string) => {
     switch (status?.toUpperCase()) {
       case 'HEALTHY': return 'Saudável';
-      case 'THIRSTY': return 'Precisa de Água';
-      case 'SICK': return 'Doente';
-      default: return 'Desconhecido';
+      case 'THIRSTY': return 'Deficit Hídrico';
+      case 'SICK': return 'Anomalia';
+      default: return 'Inconclusivo';
     }
   };
 
@@ -46,8 +46,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
         <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <History className="w-8 h-8 text-emerald-200" />
         </div>
-        <p className="text-emerald-900 font-bold mb-2">Sem histórico</p>
-        <p className="text-emerald-600/70 text-sm">Os seus futuros diagnósticos vão aparecer aqui.</p>
+        <p className="text-emerald-900 font-bold mb-2">Sem registos de campo</p>
+        <p className="text-emerald-600/70 text-sm px-8">Os diagnósticos dos teus eucaliptos vão aparecer aqui após cada análise.</p>
       </div>
     );
   }
@@ -55,15 +55,18 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-black tracking-tight text-[#064E3B]">Arquivo</h2>
-        <button 
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-[#064E3B]">Registos de Campo</h2>
+          <p className="text-xs text-emerald-600/50 font-medium mt-0.5">{history.length} diagnóstico{history.length !== 1 ? 's' : ''} registado{history.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button
           onClick={() => {
-            if (window.confirm('Tem a certeza que quer apagar todo o histórico?')) {
+            if (window.confirm('Tem a certeza que quer apagar todos os registos de campo?')) {
               onClearHistory();
             }
           }}
           className="p-2 text-rose-500 hover:bg-rose-50 rounded-full transition-colors"
-          title="Limpar Histórico"
+          title="Limpar Registos"
         >
           <Trash2 className="w-5 h-5" />
         </button>
@@ -71,7 +74,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
 
       <div className="grid gap-4">
         {history.map((item) => (
-          <div 
+          <div
             key={item.id}
             className="bg-white rounded-[2rem] p-4 flex gap-4 items-center border border-emerald-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
             onClick={() => setSelectedItem(item)}
@@ -81,14 +84,15 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
                 <img src={item.imageUrl} alt={item.species} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
-                   <Leaf className="w-6 h-6 text-emerald-500" />
+                  <Leaf className="w-6 h-6 text-emerald-500" />
                 </div>
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-[#064E3B] truncate">{item.species}</h3>
-              <p className="text-xs text-emerald-600/70 mt-1">{formatDate(item.timestamp)}</p>
+              <p className="text-xs text-emerald-600/70 mt-0.5">{formatDate(item.timestamp)}</p>
+              <p className="text-[10px] text-emerald-500/60 font-medium mt-0.5 uppercase tracking-widest">Eucalyptus spp.</p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -102,10 +106,10 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
       </div>
 
       {selectedItem && (
-        <AnalysisResultView 
-          result={selectedItem} 
-          image={selectedItem.imageUrl} 
-          onClose={() => setSelectedItem(null)} 
+        <AnalysisResultView
+          result={selectedItem}
+          image={selectedItem.imageUrl}
+          onClose={() => setSelectedItem(null)}
         />
       )}
     </div>
