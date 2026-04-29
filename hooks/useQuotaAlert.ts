@@ -92,6 +92,20 @@ export function useQuotaAlert() {
       return true;
     }
 
+    // Detetar erros de sobrecarga do Google (503)
+    if (
+      errorString.includes('503') ||
+      errorString.includes('high demand') ||
+      errorString.includes('unavailable')
+    ) {
+      showAlert({
+        isVisible: true,
+        message: 'Os servidores da Google estão sobrecarregados neste momento (Erro 503). Por favor, tenta novamente dentro de alguns segundos.',
+        type: 'api_error',
+      });
+      return true;
+    }
+
     // Detetar erros genéricos de API (chave inválida, etc.)
     if (
       errorString.includes('api key') ||
