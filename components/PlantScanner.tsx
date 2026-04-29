@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { MapPin, Loader2, AlertTriangle, Navigation } from 'lucide-react';
+import { Loader2, AlertTriangle, Navigation } from 'lucide-react';
 import { analyzePlantImage } from '../services/gemini';
 import { AnalysisResult, PlantStatus, LightLevel, GpsCoords } from '../types';
 
@@ -39,7 +39,7 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
   }, []);
 
   const captureAndAnalyze = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || isAnalyzing || gpsState !== 'ready') return;
+    if (!videoRef.current || !canvasRef.current || isAnalyzing) return;
     setIsAnalyzing(true); setError(null); setOfflineSaved(false);
     const video = videoRef.current; const canvas = canvasRef.current;
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
@@ -88,20 +88,21 @@ const PlantScanner: React.FC<PlantScannerProps> = ({ onResult, isAnalyzing, setI
       <div className="absolute inset-0 border-4 border-dashed border-white/20 pointer-events-none rounded-[2rem] m-6" />
       <div className="absolute top-5 left-0 right-0 flex justify-center"><GpsIndicator /></div>
       {(gpsState === 'denied' || gpsState === 'unavailable') && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center px-8 gap-4">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center border border-red-400/30"><MapPin className="w-8 h-8 text-red-400" /></div>
-          <p className="text-white font-black text-center text-lg">GPS Necessário</p>
-          <p className="text-white/70 text-center text-sm leading-relaxed">{gpsState === 'denied' ? 'O acesso à localização foi bloqueado.' : 'GPS não disponível neste dispositivo.'}</p>
+        <div className="absolute top-14 left-0 right-0 flex justify-center z-10">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/80 backdrop-blur-sm rounded-full border border-orange-400/40 shadow">
+            <AlertTriangle className="w-3 h-3 text-white" />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">{gpsState === 'denied' ? 'GPS Bloqueado — Sem Coordenadas' : 'GPS Indisponível'}</span>
+          </div>
         </div>
       )}
       <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center px-6 gap-4">
         {offlineSaved && <div className="bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xl flex items-center gap-2"><span>📥</span><span>Guardado offline</span></div>}
         {error && <div className="bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold animate-bounce shadow-xl">{error}</div>}
         <ResultBadge />
-        <button onClick={captureAndAnalyze} disabled={gpsState !== 'ready' || isAnalyzing} className={`w-20 h-20 rounded-full border-[6px] border-white flex items-center justify-center transition-all transform active:scale-95 shadow-2xl ${gpsState === 'ready' && !isAnalyzing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 border-gray-400 cursor-not-allowed'}`}>
+        <button onClick={captureAndAnalyze} disabled={isAnalyzing} className={`w-20 h-20 rounded-full border-[6px] border-white flex items-center justify-center transition-all transform active:scale-95 shadow-2xl ${!isAnalyzing ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 border-gray-400 cursor-not-allowed'}`}>
           {isAnalyzing ? <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" /> : <div className="w-5 h-5 bg-white rounded-full shadow-inner" />}
         </button>
-        <p className="text-white text-sm font-black tracking-widest uppercase drop-shadow-md bg-black/30 px-4 py-1 rounded-full backdrop-blur-sm">{isAnalyzing ? 'A analisar...' : gpsState === 'acquiring' ? 'A obter localização…' : (gpsState === 'denied' || gpsState === 'unavailable') ? 'GPS necessário' : 'Clique para Diagnosticar'}</p>
+        <p className="text-white text-sm font-black tracking-widest uppercase drop-shadow-md bg-black/30 px-4 py-1 rounded-full backdrop-blur-sm">{isAnalyzing ? 'A analisar...' : gpsState === 'acquiring' ? 'A obter GPS…' : 'Clique para Diagnosticar'}</p>
       </div>
     </div>
   );
