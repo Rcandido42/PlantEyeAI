@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-pt">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
@@ -16,25 +15,12 @@
     * { -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
-    @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      .pb-safe { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-    }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) { .pb-safe { padding-bottom: max(8px, env(safe-area-inset-bottom)); } }
   </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
-  }
-}
-</script>
+  <script type="importmap">{ "imports": { "@google/genai": "https://esm.sh/@google/genai@^1.38.0", "react/": "https://esm.sh/react@^19.2.4/", "react": "https://esm.sh/react@^19.2.4", "react-dom/": "https://esm.sh/react-dom@^19.2.4/" } }</script>
 </head>
-
 <body class="bg-gray-50 text-gray-900">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
-
 </html>
