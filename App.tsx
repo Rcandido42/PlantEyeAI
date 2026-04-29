@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Leaf, Camera, History, Settings, Info, Activity, Zap, WifiOff, Wifi, RefreshCw, Map, BarChart2 } from 'lucide-react';
 import PlantScanner from './components/PlantScanner';
 import LiveAssistant from './components/LiveAssistant';
 import AnalysisResultView from './components/AnalysisResultView';
-import VoiceFeedback from './components/VoiceFeedback';
+
 import CameraSelector from './components/CameraSelector';
 import HistoryView from './components/HistoryView';
 import AuthModal from './components/AuthModal';
@@ -38,6 +38,7 @@ function App() {
   const { history, addHistoryItem, clearHistory, deleteHistoryItem, markInvasiveRemoved, updateHistoryItem } = useHistory(session);
   const { isOnline, pendingCount, isSyncing } = useOfflineSync();
   const { quotaAlert, dismissQuotaAlert, handleGeminiError } = useQuotaAlert();
+  const wasOfflineRef = useRef(!isOnline);
 
   const handleReanalyze = useCallback(async (item: HistoryItem) => {
     if (!item.imageBase64 || !navigator.onLine) return;
@@ -48,6 +49,14 @@ function App() {
       await updateHistoryItem(item.id, result);
     } catch (err) { handleGeminiError(err); } finally { setIsAnalyzing(false); }
   }, [updateHistoryItem, handleGeminiError]);
+
+  useEffect(() => {
+    if (isOnline && wasOfflineRef.current) {
+      const pending = history.filter(i => i.isPending && i.imageBase64);
+      pending.forEach(item => handleReanalyze(item));
+    }
+    wasOfflineRef.current = !isOnline;
+  }, [isOnline, history, handleReanalyze]);
 
   const handleCapture = useCallback(async (result: AnalysisResult, imageDataUrl: string, coords: GpsCoords | null) => {
     setAnalysisResult(result); setCapturedImage(imageDataUrl); addHistoryItem(result, imageDataUrl, coords);
@@ -90,7 +99,7 @@ function App() {
           <div className="space-y-8"><div className="flex items-center justify-between"><h2 className="text-2xl font-black tracking-tight">{t.liveTitle}</h2><div className="flex items-center gap-2 px-3 py-1 bg-rose-100 rounded-full"><div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" /><span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Tempo Real</span></div></div><LiveAssistant isActive={activeTab === 'live'} deviceId={selectedDeviceId} onGeminiError={handleGeminiError} onSessionEnd={(result, image) => handleCapture(result, image, null)} /></div>
         )}
         {activeTab === 'history' && <HistoryView history={history} onClearHistory={clearHistory} onDeleteItem={deleteHistoryItem} onMarkRemoved={markInvasiveRemoved} onReanalyze={handleReanalyze} isOnline={isOnline} />}
-        {activeTab === 'map' && <div className="h-[calc(100dvh-8rem)] overflow-hidden"><MapView history={history} onSelectItem={handleMapSelectItem} /></div>}
+        {activeTab === 'map' && <div className="h-[calc(100dvh-7rem)] sm:h-[calc(100dvh-8rem)] overflow-hidden"><MapView history={history} onSelectItem={handleMapSelectItem} /></div>}
         {activeTab === 'stats' && <Estatistica history={history} />}
       </main>
       <nav className={`fixed bottom-0 left-0 right-0 z-50 transition-colors duration-300 ${darkMode ? 'bg-gray-900/95 border-gray-700/40' : 'bg-white/95 border-emerald-100/60'} border-t backdrop-blur-xl pb-safe`}>
@@ -120,7 +129,7 @@ function App() {
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(d => !d)} language={language} onChangeLanguage={setLanguage} onLogout={signOut} isLoggedIn={!!session} t={t} />}
       {quotaAlert && <QuotaAlert alert={quotaAlert} onDismiss={dismissQuotaAlert} />}
       {analysisResult && capturedImage && <AnalysisResultView result={analysisResult} image={capturedImage} onClose={() => { setAnalysisResult(null); setCapturedImage(null); }} />}
-      {analysisResult && <VoiceFeedback text={`${analysisResult.species}. Diagnóstico: ${analysisResult.summary}. Recomendação: ${analysisResult.recommendation}`} trigger={analysisResult} />}
+
     </div>
   );
 }

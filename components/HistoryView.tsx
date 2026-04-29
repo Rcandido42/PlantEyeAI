@@ -105,34 +105,34 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onClearHistory, onDe
       ) : (
         <div className="grid gap-4">
           {filteredHistory.map((item) => (
-            <div key={item.id} className={`bg-white rounded-[2rem] p-4 flex gap-4 items-center border shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${item.isInvasive && !item.removedAt ? 'border-purple-200' : 'border-emerald-100'}`} onClick={() => setSelectedItem(item)}>
-              <div className={`w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 ${item.isInvasive && !item.removedAt ? 'border-purple-200' : 'border-emerald-50'} relative`}>
+            <div key={item.id} className={`bg-white rounded-[2rem] p-3 sm:p-4 flex gap-3 sm:gap-4 items-center border shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${item.isInvasive && !item.removedAt ? 'border-purple-200' : 'border-emerald-100'}`} onClick={() => setSelectedItem(item)}>
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 ${item.isInvasive && !item.removedAt ? 'border-purple-200' : 'border-emerald-50'} relative`}>
                 {item.imageUrl ? (
                   <><img src={item.imageUrl} alt={item.species} className="w-full h-full object-cover" />{item.isInvasive && !item.removedAt && <div className="absolute inset-0 bg-purple-500/15 flex items-end justify-center pb-1"><span className="text-[8px] font-black text-purple-700 bg-white/80 px-1 rounded">⚠</span></div>}</>
                 ) : <div className="w-full h-full bg-emerald-100 flex items-center justify-center"><Leaf className="w-6 h-6 text-emerald-500" /></div>}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   <span className="text-[9px] font-black text-emerald-400/60 bg-emerald-50 px-1.5 py-0.5 rounded-full uppercase tracking-widest">#{String(item.analysisId ?? 0).padStart(3, '0')}</span>
-                  {item.coords && <span className="text-[9px] text-emerald-400/50 font-medium">📍 GPS</span>}
+                  {item.coords && <span className="text-[9px] text-emerald-400/50 font-medium">📍</span>}
                   {item.isPending && <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full">📥 Pendente</span>}
                   {item.isInvasive && !item.removedAt && <span className="text-[9px] font-black text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-full">⚠ INVASORA</span>}
                   {item.isInvasive && item.removedAt && <span className="text-[9px] font-black text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">✅ Removida</span>}
-                  {!item.isInvasive && !item.isPending && item.threatDetected && item.threatDetected !== 'nenhuma' && <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">🐛 {item.severityLevel !== undefined ? `Nv.${item.severityLevel} ` : ''}{item.threatDetected.replace('_', ' ')}</span>}
+                  {!item.isInvasive && !item.isPending && item.threatDetected && item.threatDetected !== 'nenhuma' && <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">🐛 {item.threatDetected.replace('_', ' ')}</span>}
                 </div>
-                <h3 className="font-bold text-[#064E3B] truncate italic">{item.isInvasive ? (item.invasiveSpecies || item.species) : item.species}</h3>
+                <h3 className="font-bold text-[#064E3B] truncate italic text-sm">{item.isInvasive ? (item.invasiveSpecies || item.species) : item.species}</h3>
                 <p className="text-xs text-emerald-600/70 mt-0.5">{formatDate(item.timestamp)}</p>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 {item.isPending && isOnline && (
-                  <button onClick={async e => { e.stopPropagation(); setReanalyzingId(item.id); await onReanalyze(item); setReanalyzingId(null); }} disabled={reanalyzingId === item.id} className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-[9px] font-black uppercase tracking-widest" title="Analisar imagem agora">
-                    {reanalyzingId === item.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}<span>{reanalyzingId === item.id ? 'A analisar…' : 'Analisar'}</span>
+                  <button onClick={async e => { e.stopPropagation(); setReanalyzingId(item.id); await onReanalyze(item); setReanalyzingId(null); }} disabled={reanalyzingId === item.id} className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-60 text-[9px] font-black uppercase tracking-widest">
+                    <RefreshCw className={`w-3 h-3 ${reanalyzingId === item.id ? 'animate-spin' : ''}`} /><span className="hidden sm:inline">{reanalyzingId === item.id ? 'A analisar…' : 'Analisar'}</span>
                   </button>
                 )}
-                {item.isInvasive && !item.removedAt && <button onClick={e => { e.stopPropagation(); onMarkRemoved(item.id); }} className="p-1.5 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors" title="Marcar invasora como removida"><Trash2 className="w-4 h-4" /></button>}
-                <button onClick={e => { e.stopPropagation(); exportSinglePDF(item); }} className="p-1.5 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Exportar PDF"><FileDown className="w-4 h-4" /></button>
-                {item.isInvasive ? <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full text-purple-700 bg-purple-100">{item.removedAt ? 'Removida' : 'Invasora'}</span> : <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${getStatusColor(item.status, item.healthStatus)}`}>{translateStatus(item.status, item.healthStatus)}</span>}
-                <ChevronRight className="w-5 h-5 text-emerald-200 group-hover:text-emerald-400 transition-colors" />
+                {item.isInvasive && !item.removedAt && <button onClick={e => { e.stopPropagation(); onMarkRemoved(item.id); }} className="p-1.5 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"><Trash2 className="w-4 h-4" /></button>}
+                <button onClick={e => { e.stopPropagation(); exportSinglePDF(item); }} className="p-1.5 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors hidden sm:flex"><FileDown className="w-4 h-4" /></button>
+                {item.isInvasive ? <span className="hidden sm:inline px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full text-purple-700 bg-purple-100">{item.removedAt ? 'Removida' : 'Invasora'}</span> : <span className={`hidden sm:inline px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${getStatusColor(item.status, item.healthStatus)}`}>{translateStatus(item.status, item.healthStatus)}</span>}
+                <ChevronRight className="w-4 h-4 text-emerald-200 group-hover:text-emerald-400 transition-colors" />
               </div>
             </div>
           ))}

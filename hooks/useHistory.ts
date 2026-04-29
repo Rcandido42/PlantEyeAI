@@ -21,6 +21,8 @@ export function useHistory(session: Session | null) {
         const items: HistoryItem[] = data.map((r, i) => ({
           id: r.id, analysisId: r.analysis_id ?? (data.length - i), timestamp: r.timestamp, imageUrl: r.image_url, species: r.species ?? 'desconhecida', healthStatus: r.health_status ?? 'Saudável', threatDetected: r.threat_detected ?? 'nenhuma', severityLevel: r.severity_level ?? 0, forestryRisk: r.forestry_risk ?? 'Baixo', recommendations: r.recommendations || [r.recommendation], raizReference: r.raiz_reference, summary: r.summary, lightLevel: r.light_level, confidence: r.confidence, status: r.status, recommendation: r.recommendation, coords: r.latitude ? { latitude: r.latitude, longitude: r.longitude } : null, isInvasive: r.is_invasive, invasiveSpecies: r.invasive_species, removedAt: r.removed_at ? new Date(r.removed_at).getTime() : null
         } as HistoryItem));
+        const maxId = items.reduce((max, item) => Math.max(max, item.analysisId ?? 0), parseInt(localStorage.getItem(LS_COUNT) || '0', 10));
+        localStorage.setItem(LS_COUNT, String(maxId));
         setHistory(items); writeLocal(items);
       }
     } catch {}

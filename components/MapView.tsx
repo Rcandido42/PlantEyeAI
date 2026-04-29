@@ -56,7 +56,12 @@ const MapView: React.FC<MapViewProps> = ({ history, onSelectItem }) => {
 
   if (items.length === 0) return <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4"><div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center"><MapPin className="w-8 h-8 text-emerald-200" /></div><p className="font-bold">Sem diagnósticos no mapa</p></div>;
 
-  return <div className="relative h-full flex flex-col"><div className="absolute top-0 left-0 right-0 z-[400] p-4 pointer-events-none"><div className="bg-white/90 backdrop-blur-sm rounded-2xl p-3 shadow-sm w-fit"><p className="text-[10px] font-black uppercase tracking-widest text-[#064E3B]">Mapa de Campo</p><p className="text-[9px] text-emerald-600/60">{items.length} pins</p></div></div><div ref={containerRef} className="flex-1 w-full" style={{ minHeight: 300 }} /></div>;
+  return (
+    <div className="relative h-full flex flex-col">
+      <style>{`.leaflet-control-attribution { opacity: 0.12 !important; font-size: 7px !important; background: transparent !important; box-shadow: none !important; } .leaflet-control-attribution a { color: inherit; }`}</style>
+      <div ref={containerRef} className="flex-1 w-full" style={{ minHeight: 300 }} />
+    </div>
+  );
 };
 
 export default MapView;

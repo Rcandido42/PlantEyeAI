@@ -61,7 +61,6 @@ const InvasivePanel: React.FC<{ result: AnalysisResult; image: string | null; on
           </div>
           <div className="space-y-2">
             <div className="px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100"><p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Referência Científica</p><p className="text-xs text-gray-600 font-medium italic">{result.raizReference ?? 'Base científica RAIZ · raiz-iifp.pt'}</p></div>
-            <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100"><div className="w-2 h-2 rounded-full bg-red-400" /><p className="text-xs text-gray-600 font-medium">Confiança: <span className="font-black">{Math.round((result.confidence ?? 0) * 100)}%</span></p></div>
           </div>
         </div>
         <div className="p-6 pt-2 bg-white border-t border-red-50"><button onClick={onClose} className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-[1.5rem] font-bold tracking-wide transition-all shadow-xl active:scale-95">Registar e Fechar</button></div>
@@ -102,7 +101,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, image, 
           </div>
           <div className="space-y-2">
             <div className="px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-100"><p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/50 mb-0.5">Referência Científica</p><p className="text-xs text-emerald-700 font-medium italic">{result.raizReference ?? 'Base científica RAIZ · raiz-iifp.pt'}</p></div>
-            <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-100"><div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" /><p className="text-xs text-emerald-700 font-medium">Confiança do modelo: <span className="font-black">{Math.round((result.confidence ?? 0) * 100)}%</span></p></div>
           </div>
         </div>
         <div className="p-6 pt-2 bg-white border-t border-emerald-50"><button onClick={onClose} className="w-full py-4 bg-[#064E3B] hover:bg-[#064E3B]/90 text-white rounded-[1.5rem] font-bold tracking-wide transition-all shadow-xl active:scale-95">Fechar Relatório</button></div>
