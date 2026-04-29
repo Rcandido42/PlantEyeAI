@@ -93,7 +93,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ isActive, deviceId, onGem
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } } },
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } },
           systemInstruction: `És o PlantEye, assistente de diagnóstico fitossanitário de eucaliptos. Fala sempre em português de Portugal (pt-PT). Analisa o que vês na câmara e reporta em tempo real: espécie, saúde, ameaças detetadas. Sê conciso e técnico.`
         },
         callbacks: {
