@@ -31,7 +31,8 @@ const CameraSelector: React.FC<CameraSelectorProps> = ({ onDeviceSelect }) => {
   }, [onDeviceSelect, activeDeviceId]);
 
   const handleSelect = (id: string) => { setActiveDeviceId(id); onDeviceSelect(id); setIsOpen(false); };
-
+  
+  if (devices.length === 0) return null;
 
   return (
     <div className="relative" ref={dropdownRef}>
