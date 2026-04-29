@@ -137,27 +137,40 @@ export const exportAllPDF = async (items: HistoryItem[]) => {
   doc.text(`Saudáveis: ${healthy}   Deficit Hídrico: ${thirsty}   Anomalias: ${sick}   Total: ${items.length}`, margin + 4, y + 18);
   y += 36;
   items.forEach((item, index) => {
-    if (y > 240) {
+    if (y > 230) {
       doc.addPage();
       y = 20;
     }
     doc.setDrawColor(220, 240, 230);
     doc.setFillColor(252, 254, 252);
     doc.roundedRect(margin, y, contentW, 38, 3, 3, 'FD');
+    
+    let textX = margin + 4;
+    
+    if (item.imageUrl) {
+      try {
+        doc.addImage(item.imageUrl, 'JPEG', margin + 4, y + 4, 30, 30);
+        textX = margin + 38;
+      } catch {}
+    }
+
     doc.setTextColor(6, 78, 59);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${index + 1}. ${item.species}`, margin + 4, y + 9);
+    doc.text(`${index + 1}. ${item.isInvasive ? (item.invasiveSpecies || item.species) : item.species}`, textX, y + 9);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text(formatDate(item.timestamp), margin + 4, y + 16);
+    doc.text(formatDate(item.timestamp), textX, y + 16);
     doc.setTextColor(6, 78, 59);
     doc.setFontSize(8);
-    doc.text(`Estado: ${translateStatus(item.status)}   Luz: ${translateLight(item.lightLevel)}   Confiança: ${Math.round((item.confidence ?? 0) * 100)}%`, margin + 4, y + 23);
-    const recLines = doc.splitTextToSize(item.recommendation, contentW - 8);
+    
+    const statusText = item.isInvasive ? '⚠ INVASORA' : translateStatus(item.status);
+    doc.text(`Estado: ${statusText}   Luz: ${translateLight(item.lightLevel)}   Confiança: ${Math.round((item.confidence ?? 0) * 100)}%`, textX, y + 23);
+    
+    const recLines = doc.splitTextToSize(item.recommendation, contentW - (textX - margin) - 4);
     doc.setTextColor(60, 60, 60);
-    doc.text(recLines[0], margin + 4, y + 31);
+    doc.text(recLines[0], textX, y + 31);
     y += 44;
   });
   doc.setFontSize(7);
