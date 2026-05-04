@@ -1,0 +1,27 @@
+PlantEyeAI - Walkthrough e Visão Geral
+
+O PlantEyeAI é uma ferramenta profissional de diagnóstico florestal baseada em Inteligência Artificial, criada especificamente para técnicos de campo. Especializada na cultura do Eucalyptus globulus (eucalipto comum), a aplicação utiliza o vasto conhecimento científico do RAIZ – Instituto de Investigação da Floresta e Papel para analisar o estado fitossanitário das árvores, detetar pragas ou doenças e identificar prontamente espécies invasoras através da simples captura de imagens.
+
+O que o PlantEyeAI faz?
+
+O sistema atua como um assistente especializado de campo para o silvicultor e proprietário florestal, oferecendo as seguintes funcionalidades principais:
+
+* Diagnóstico Instantâneo por IA: O técnico tira uma fotografia a uma árvore (ou folha/tronco afetado) e o modelo de IA (baseado no Google Gemini Vision) analisa a imagem de imediato, classificando-a num de três cenários:
+    1. Saudável: Confirma a boa saúde e fornece recomendações padrão de manutenção.
+    2. Com Praga ou Doença: Identifica a ameaça específica (ex: Gonipterus platensis, Mycosphaerella, deficiências de nutrientes), indica o nível de severidade e sugere ações de mitigação prioritárias.
+    3. Espécie Invasora: Deteta e emite um alerta crítico para a remoção imediata de invasoras comuns (ex: Acacia dealbata, Hakea sericea).
+
+* Mapeamento Georreferenciado (Mapa de Campo): Cada análise regista automaticamente as coordenadas GPS no momento da captura. O sistema cria um mapa interativo onde cada árvore analisada é representada por um marcador com a cor do seu estado, permitindo uma rápida visualização espacial de focos de infeção ou invasão.
+
+* Funcionamento Offline (PWA): Sendo uma floresta frequentemente desprovida de rede móvel, a aplicação foi desenhada com uma arquitetura "Offline First". O técnico pode capturar imagens e gerar "diagnósticos pendentes" que ficam guardados localmente no dispositivo. Assim que a ligação à internet for restabelecida, a app sincroniza automaticamente os dados com a base de dados central (Supabase).
+
+* Histórico e Emissão de Relatórios: Todo o histórico de avaliações é mantido de forma cronológica e organizada. O sistema permite pesquisar, filtrar avaliações e, criticamente, exportar relatórios em formato PDF para fins de auditoria, certificação florestal ou elaboração de planos de ação.
+
+* Modo de Assistente ao Vivo (Live Assistant): Uma funcionalidade inovadora que utiliza áudio e vídeo em tempo real, permitindo ao técnico "conversar" com a IA enquanto percorre a propriedade e aponta a câmara, recebendo feedback sonoro e visual instantâneo.
+
+Em resumo, o PlantEyeAI transforma o smartphone de um técnico num laboratório florestal de bolso, garantindo que as decisões de gestão, tratamento e conservação sejam mais rápidas, precisas e sustentadas em critérios científicos rigorosos.
+
+Tarefas e Otimizações Recentes
+* Limpeza do Codebase: Todos os comentários foram removidos do código-fonte para um estado de produção mais limpo e minimalista.
+* Deployment: Configurações alinhadas para o lançamento em produção através da plataforma Vercel.
+* Resolução de Bugs e UI/UX: Foram efetuadas revisões profundas para garantir a funcionalidade em dispositivos móveis (ex: problemas de câmara no iOS) e estabilidade do Offline Sync.
