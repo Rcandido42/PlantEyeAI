@@ -5,12 +5,13 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+    const env = loadEnv(mode, process.cwd(), '');
     return {
       server: { port: 3000, host: '0.0.0.0' },
       build: { chunkSizeWarningLimit: 1600 },
       plugins: [
-        react(), basicSsl(),
+        react(),
+        ...(mode === 'development' ? [basicSsl()] : []),
         VitePWA({
           registerType: 'autoUpdate',
           workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'], runtimeCaching: [{ urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*/i, handler: 'CacheFirst', options: { cacheName: 'osm-tiles-cache', expiration: { maxEntries: 2000, maxAgeSeconds: 2592000 }, cacheableResponse: { statuses: [0, 200] } } }, { urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i, handler: 'CacheFirst', options: { cacheName: 'supabase-images-cache', expiration: { maxEntries: 500, maxAgeSeconds: 604800 }, cacheableResponse: { statuses: [0, 200] } } }] },
