@@ -25,7 +25,7 @@ export function useHistory(session: Session | null) {
         localStorage.setItem(LS_COUNT, String(maxId));
         setHistory(items); writeLocal(items);
       }
-    } catch {}
+    } catch (err) { console.warn('[useHistory] fetch error:', err); }
   }, [session]);
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
@@ -37,9 +37,10 @@ export function useHistory(session: Session | null) {
     if (session && navigator.onLine) {
       try {
         const row = { user_id: session.user.id, analysis_id: aid, species: res.species, status: res.status, health_status: res.healthStatus, threat_detected: res.threatDetected, severity_level: res.severityLevel, forestry_risk: res.forestryRisk, recommendations: res.recommendations, raiz_reference: res.raizReference, light_level: res.lightLevel, summary: res.summary, recommendation: res.recommendations?.[0] || '', confidence: res.confidence, image_url: url, timestamp: item.timestamp, latitude: coords?.latitude, longitude: coords?.longitude, is_invasive: res.isInvasive, invasive_species: res.invasiveSpecies };
-        const { data } = await supabase.from('scan_history').insert(row).select().single();
+        const { data, error } = await supabase.from('scan_history').insert(row).select().single();
+        if (error) console.warn('[useHistory] addItem insert error:', error);
         if (data) setHistory(p => p.map(i => i.analysisId === aid ? { ...i, id: data.id } : i));
-      } catch {}
+      } catch (err) { console.warn('[useHistory] addItem failed:', err); }
     }
     return item;
   }, [session]);
@@ -49,11 +50,32 @@ export function useHistory(session: Session | null) {
   const markInvasiveRemoved = useCallback(async (id: string) => { const rat = Date.now(); setHistory(p => { const u = p.map(i => i.id === id ? { ...i, removedAt: rat } : i); writeLocal(u); return u; }); if (session && navigator.onLine) await supabase.from('scan_history').update({ removed_at: new Date(rat).toISOString() }).eq('id', id); }, [session]);
   const updateHistoryItem = useCallback(async (id: string, res: AnalysisResult) => {
     let uitem: HistoryItem | null = null;
-    setHistory(p => { const u = p.map(i => { if (i.id !== id) return i; uitem = { ...i, ...res, isPending: false, imageBase64: undefined }; return uitem!; }); writeLocal(u); return u; });
+    setHistory(p => {
+      const u = p.map(i => {
+        if (i.id !== id) return i;
+        const updated = { ...i, ...res, isPending: false, imageBase64: undefined };
+        uitem = updated;
+        return updated;
+      });
+      writeLocal(u);
+      return u;
+    });
+    // If the updater hasn't run synchronously, find the item from current state
+    if (!uitem) {
+      setHistory(p => { uitem = p.find(i => i.id === id) ?? null; return p; });
+    }
     if (session && navigator.onLine && uitem) {
       const u = uitem as HistoryItem;
-      const row = { species: u.species, status: u.status, health_status: u.healthStatus, threat_detected: u.threatDetected, severity_level: u.severityLevel, forestry_risk: u.forestryRisk, recommendations: u.recommendations, raiz_reference: u.raizReference, light_level: u.light_level, summary: u.summary, recommendation: u.recommendations?.[0] || '', confidence: u.confidence, is_invasive: u.isInvasive, invasive_species: u.invasiveSpecies };
-      try { if (u.id.startsWith('local_')) await supabase.from('scan_history').insert({ ...row, user_id: session.user.id, analysis_id: u.analysisId, timestamp: u.timestamp, image_url: u.imageUrl, latitude: u.coords?.latitude, longitude: u.coords?.longitude }); else await supabase.from('scan_history').update(row).eq('id', u.id); } catch {}
+      const row = { species: u.species, status: u.status, health_status: u.healthStatus, threat_detected: u.threatDetected, severity_level: u.severityLevel, forestry_risk: u.forestryRisk, recommendations: u.recommendations, raiz_reference: u.raizReference, light_level: u.lightLevel, summary: u.summary, recommendation: u.recommendations?.[0] || '', confidence: u.confidence, is_invasive: u.isInvasive, invasive_species: u.invasiveSpecies };
+      try {
+        if (u.id.startsWith('local_')) {
+          const { error } = await supabase.from('scan_history').insert({ ...row, user_id: session.user.id, analysis_id: u.analysisId, timestamp: u.timestamp, image_url: u.imageUrl, latitude: u.coords?.latitude, longitude: u.coords?.longitude });
+          if (error) console.warn('[useHistory] insert error:', error);
+        } else {
+          const { error } = await supabase.from('scan_history').update(row).eq('id', u.id);
+          if (error) console.warn('[useHistory] update error:', error);
+        }
+      } catch (err) { console.warn('[useHistory] DB save failed:', err); }
     }
   }, [session]);
 
