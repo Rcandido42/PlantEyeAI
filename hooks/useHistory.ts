@@ -32,15 +32,45 @@ export function useHistory(session: Session | null) {
 
   const addHistoryItem = useCallback(async (res: AnalysisResult, url: string, coords: GpsCoords | null) => {
     const aid = nextId();
-    const item: HistoryItem = { id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, analysisId: aid, timestamp: Date.now(), imageUrl: url, coords, ...res };
+    const now = Date.now();
+    const item: HistoryItem = { id: `local_${now}_${Math.random().toString(36).slice(2, 7)}`, analysisId: aid, timestamp: now, imageUrl: url, coords, ...res };
     setHistory(p => { const u = [item, ...p]; writeLocal(u); return u; });
+    console.log('[useHistory] addHistoryItem called. session:', !!session, 'online:', navigator.onLine, 'userId:', session?.user?.id);
     if (session && navigator.onLine) {
       try {
-        const row = { user_id: session.user.id, analysis_id: aid, species: res.species, status: res.status, health_status: res.healthStatus, threat_detected: res.threatDetected, severity_level: res.severityLevel, forestry_risk: res.forestryRisk, recommendations: res.recommendations, raiz_reference: res.raizReference, light_level: res.lightLevel, summary: res.summary, recommendation: res.recommendations?.[0] || '', confidence: res.confidence, image_url: url, timestamp: item.timestamp, latitude: coords?.latitude, longitude: coords?.longitude, is_invasive: res.isInvasive, invasive_species: res.invasiveSpecies };
+        const row = {
+          user_id: session.user.id,
+          analysis_id: aid,
+          species: res.species,
+          status: res.status,
+          health_status: res.healthStatus,
+          threat_detected: res.threatDetected,
+          severity_level: res.severityLevel,
+          forestry_risk: res.forestryRisk,
+          recommendations: res.recommendations,
+          raiz_reference: res.raizReference,
+          light_level: res.lightLevel,
+          summary: res.summary,
+          recommendation: res.recommendations?.[0] || '',
+          confidence: res.confidence,
+          image_url: url,
+          timestamp: now,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
+          is_invasive: res.isInvasive ?? false,
+          invasive_species: res.invasiveSpecies ?? null,
+        };
+        console.log('[useHistory] Inserting row:', JSON.stringify(row, null, 2));
         const { data, error } = await supabase.from('scan_history').insert(row).select().single();
-        if (error) console.warn('[useHistory] addItem insert error:', error);
-        if (data) setHistory(p => p.map(i => i.analysisId === aid ? { ...i, id: data.id } : i));
-      } catch (err) { console.warn('[useHistory] addItem failed:', err); }
+        if (error) {
+          console.error('[useHistory] ❌ INSERT ERROR:', error.code, error.message, error.details, error.hint);
+        } else {
+          console.log('[useHistory] ✅ INSERT SUCCESS, id:', data?.id);
+          if (data) setHistory(p => p.map(i => i.analysisId === aid ? { ...i, id: data.id } : i));
+        }
+      } catch (err) { console.error('[useHistory] ❌ addItem exception:', err); }
+    } else {
+      console.warn('[useHistory] ⚠️ SKIPPED DB save — session:', !!session, 'online:', navigator.onLine);
     }
     return item;
   }, [session]);
@@ -64,18 +94,26 @@ export function useHistory(session: Session | null) {
     if (!uitem) {
       setHistory(p => { uitem = p.find(i => i.id === id) ?? null; return p; });
     }
+    console.log('[useHistory] updateHistoryItem — session:', !!session, 'online:', navigator.onLine, 'uitem:', !!uitem, 'id:', id);
     if (session && navigator.onLine && uitem) {
       const u = uitem as HistoryItem;
-      const row = { species: u.species, status: u.status, health_status: u.healthStatus, threat_detected: u.threatDetected, severity_level: u.severityLevel, forestry_risk: u.forestryRisk, recommendations: u.recommendations, raiz_reference: u.raizReference, light_level: u.lightLevel, summary: u.summary, recommendation: u.recommendations?.[0] || '', confidence: u.confidence, is_invasive: u.isInvasive, invasive_species: u.invasiveSpecies };
+      const row = { species: u.species, status: u.status, health_status: u.healthStatus, threat_detected: u.threatDetected, severity_level: u.severityLevel, forestry_risk: u.forestryRisk, recommendations: u.recommendations, raiz_reference: u.raizReference, light_level: u.lightLevel, summary: u.summary, recommendation: u.recommendations?.[0] || '', confidence: u.confidence, is_invasive: u.isInvasive ?? false, invasive_species: u.invasiveSpecies ?? null };
       try {
         if (u.id.startsWith('local_')) {
-          const { error } = await supabase.from('scan_history').insert({ ...row, user_id: session.user.id, analysis_id: u.analysisId, timestamp: u.timestamp, image_url: u.imageUrl, latitude: u.coords?.latitude, longitude: u.coords?.longitude });
-          if (error) console.warn('[useHistory] insert error:', error);
+          const insertRow = { ...row, user_id: session.user.id, analysis_id: u.analysisId, timestamp: u.timestamp, image_url: u.imageUrl, latitude: u.coords?.latitude ?? null, longitude: u.coords?.longitude ?? null };
+          console.log('[useHistory] updateHistoryItem INSERT (local_ id):', JSON.stringify(insertRow));
+          const { error } = await supabase.from('scan_history').insert(insertRow);
+          if (error) console.error('[useHistory] ❌ updateHistoryItem insert error:', error.code, error.message, error.details);
+          else console.log('[useHistory] ✅ updateHistoryItem insert success');
         } else {
+          console.log('[useHistory] updateHistoryItem UPDATE (db id):', u.id);
           const { error } = await supabase.from('scan_history').update(row).eq('id', u.id);
-          if (error) console.warn('[useHistory] update error:', error);
+          if (error) console.error('[useHistory] ❌ updateHistoryItem update error:', error.code, error.message, error.details);
+          else console.log('[useHistory] ✅ updateHistoryItem update success');
         }
-      } catch (err) { console.warn('[useHistory] DB save failed:', err); }
+      } catch (err) { console.error('[useHistory] ❌ DB save failed:', err); }
+    } else {
+      console.warn('[useHistory] ⚠️ updateHistoryItem SKIPPED DB save');
     }
   }, [session]);
 
